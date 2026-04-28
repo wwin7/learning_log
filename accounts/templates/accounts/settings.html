@@ -1,0 +1,122 @@
+{% extends 'learning_logs/base.html' %}
+
+{% block title %}账户设置{% endblock title %}
+{% block page_header %}账户设置{% endblock page_header %}
+
+{% block content %}
+<style>
+  .profile-avatar-lg {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(31, 122, 224, 0.2);
+  }
+</style>
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="panel-card">
+      <h5 class="mb-3">个人资料</h5>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="profile">
+
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <img id="avatarPreview" src="{{ profile.avatar_url }}" alt="avatar" class="profile-avatar-lg">
+          <div>
+            <button id="avatarPickBtn" type="button" class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-upload me-1"></i>更新头像
+            </button>
+            <div class="small text-secondary mt-2">支持 jpg / png，建议正方形图片</div>
+          </div>
+        </div>
+        <input id="id_avatar" type="file" name="avatar" accept="image/*" class="d-none">
+        {% if profile_form.avatar.errors %}
+        <div class="text-danger small mb-2">{{ profile_form.avatar.errors|striptags }}</div>
+        {% endif %}
+
+        <div class="mb-3">
+          <label class="form-label">{{ profile_form.weekly_target.label }}</label>
+          {{ profile_form.weekly_target }}
+          {% if profile_form.weekly_target.errors %}
+          <div class="text-danger small mt-1">{{ profile_form.weekly_target.errors|striptags }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">{{ profile_form.username.label }}</label>
+          {{ profile_form.username }}
+          {% if profile_form.username.errors %}
+          <div class="text-danger small mt-1">{{ profile_form.username.errors|striptags }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">{{ profile_form.signature.label }}</label>
+          {{ profile_form.signature }}
+          <div class="small text-secondary mt-1">最多 56 个字符，填写后会显示在侧边栏左下角。</div>
+          {% if profile_form.signature.errors %}
+          <div class="text-danger small mt-1">{{ profile_form.signature.errors|striptags }}</div>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-brand">保存资料</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="panel-card">
+      <h5 class="mb-3">修改密码</h5>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="password">
+
+        {% for field in password_form %}
+        <div class="mb-3">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}
+          <div class="small text-secondary">{{ field.help_text|safe }}</div>
+          {% endif %}
+          {% if field.errors %}
+          <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-outline-primary">更新密码</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+  (function() {
+    const pickBtn = document.getElementById('avatarPickBtn');
+    const avatarInput = document.getElementById('id_avatar');
+    const avatarPreview = document.getElementById('avatarPreview');
+    if (!pickBtn || !avatarInput || !avatarPreview) {
+      return;
+    }
+
+    pickBtn.addEventListener('click', function() {
+      avatarInput.click();
+    });
+
+    avatarInput.addEventListener('change', function() {
+      const file = avatarInput.files && avatarInput.files[0];
+      if (!file) {
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        avatarPreview.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  })();
+</script>
+{% endblock extra_js %}

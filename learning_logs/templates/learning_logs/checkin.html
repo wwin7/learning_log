@@ -1,0 +1,78 @@
+{% extends 'learning_logs/base.html' %}
+
+{% block title %}每日打卡{% endblock title %}
+
+{% block page_header %}每日打卡中心{% endblock page_header %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="panel-card">
+      <h5 class="mb-3">今日打卡</h5>
+      <p class="text-secondary">每天仅可打卡一次，写一句备注记录今天的进步。</p>
+      <form method="post" action="{% url 'learning_logs:checkin' %}" id="checkinForm">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="mb-3">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+        </div>
+        {% endfor %}
+        <button class="btn btn-brand" type="submit" {% if today_checked %}disabled{% endif %}>
+          {% if today_checked %}已打卡，明天继续加油{% else %}立即打卡{% endif %}
+        </button>
+      </form>
+      <div class="mt-3">
+        <span class="tag-chip">连续 {{ streak }} 天</span>
+        <span class="tag-chip">{{ badge }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="panel-card h-100">
+      <h5 class="mb-3">最近打卡轨迹 ⛳</h5>
+      <div class="timeline">
+        {% for item in checkins %}
+        <div class="timeline-item">
+          <div class="timeline-date">{{ item.checkin_date|date:'Y年m月d日' }}</div>
+          <div class="timeline-content">{{ item.note|default:'没有留下备注，但留下了汗水。' }}</div>
+        </div>
+        {% empty %}
+        <div class="text-center text-secondary py-4">
+          <i class="bi bi-calendar-x fs-1 text-muted d-block mb-3"></i>
+          暂无打卡记录，今天开始你的第一次坚持吧！
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="checkinSuccessModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content panel-card">
+      <div class="modal-body text-center py-4">
+        <h5 class="mb-2">打卡成功</h5>
+        <p class="text-secondary mb-3">你的坚持正在积累复利，明天继续。</p>
+        <button type="button" class="btn btn-brand" data-bs-dismiss="modal">继续加油</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+  $(function() {
+    {% if messages %}
+      {% for message in messages %}
+        {% if 'success' in message.tags %}
+          const modal = new bootstrap.Modal(document.getElementById('checkinSuccessModal'));
+          modal.show();
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  });
+</script>
+{% endblock extra_js %}

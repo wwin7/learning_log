@@ -1,0 +1,53 @@
+{% extends 'learning_logs/base.html' %}
+
+{% block title %}全局搜索{% endblock title %}
+{% block page_header %}全局搜索{% endblock page_header %}
+
+{% block content %}
+<div class="panel-card mb-3">
+  <form method="get" action="{% url 'learning_logs:global_search' %}">
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="text" class="form-control" name="q" value="{{ keyword }}" placeholder="搜索分类、标签、笔记内容...">
+      <button class="btn btn-brand" type="submit">搜索</button>
+    </div>
+  </form>
+</div>
+
+{% if keyword %}
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="panel-card h-100">
+      <h6 class="mb-3">分类匹配</h6>
+      {% for topic in topic_results %}
+      <div class="mb-2">
+        <a href="{% url 'learning_logs:topic' topic.id %}?q={{ keyword }}" class="text-decoration-none fw-semibold">{{ topic.text }}</a>
+        <div class="small text-secondary">{{ topic.entry_total }} 篇笔记</div>
+      </div>
+      {% empty %}
+      <div class="text-secondary small">无分类匹配结果</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="panel-card h-100">
+      <h6 class="mb-3">笔记匹配</h6>
+      {% for entry in entry_results %}
+      <div class="mb-3 pb-3 border-bottom">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <a href="{% url 'learning_logs:topic' entry.topic.id %}?q={{ keyword }}" class="text-decoration-none fw-semibold">{{ entry.topic.text }}</a>
+          <span class="small text-secondary">{{ entry.date_added|date:'Y-m-d H:i' }}</span>
+        </div>
+        <div style="white-space: pre-wrap;">{{ entry.highlighted_text|safe|truncatechars_html:260 }}</div>
+      </div>
+      {% empty %}
+      <div class="text-secondary small">无笔记匹配结果</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="panel-card text-secondary">输入关键词开始搜索。</div>
+{% endif %}
+{% endblock content %}

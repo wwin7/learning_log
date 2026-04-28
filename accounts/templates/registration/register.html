@@ -1,12 +1,23 @@
 {% extends "learning_logs/base.html" %}
 
+{% block title %}注册{% endblock title %}
+
+{% block page_header %}创建账号{% endblock page_header %}
+
 {% block content %}
-
- <form action="{% url 'accounts:register' %}" method='post'>
- {% csrf_token %}
- {{ form.as_div }}
- 
- <button name="submit">Register</button>
- </form>
-
+<div class="panel-card" style="max-width: 520px;">
+	<form action="{% url 'accounts:register' %}" method="post">
+		{% csrf_token %}
+		{% for field in form %}
+		<div class="mb-3">
+			<label class="form-label">{{ field.label }}</label>
+			{{ field }}
+			{% if field.errors %}
+			<div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+			{% endif %}
+		</div>
+		{% endfor %}
+		<button class="btn btn-brand" type="submit">注册并进入系统</button>
+	</form>
+</div>
 {% endblock content %}

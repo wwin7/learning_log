@@ -1,0 +1,257 @@
+{% extends 'learning_logs/base.html' %}
+
+{% block title %}数据仪表盘{% endblock title %}
+
+{% block page_header %}学习数据仪表盘{% endblock page_header %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-xl-3 col-md-6">
+    <div class="panel-card h-100">
+      <div class="text-secondary small">分类总数</div>
+      <div class="display-6 fw-bold">{{ topic_count }}</div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6">
+    <div class="panel-card h-100">
+      <div class="text-secondary small">笔记总数</div>
+      <div class="display-6 fw-bold">{{ entry_count }}</div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6">
+    <div class="panel-card h-100">
+      <div class="text-secondary small">30天打卡天数</div>
+      <div class="display-6 fw-bold">{{ checkin_days_30 }}</div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6">
+    <div class="panel-card h-100">
+      <div class="text-secondary small">30天打卡率</div>
+      <div class="display-6 fw-bold">{{ checkin_rate }}%</div>
+    </div>
+  </div>
+  <div class="col-12">
+    <div class="panel-card">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+          <div class="text-secondary small">本周目标完成率</div>
+          <div class="fw-semibold">目标 {{ weekly_target }} 篇，本周已完成 {{ weekly_entry_count }} 篇</div>
+        </div>
+        <div class="fw-bold">{{ weekly_progress }}%</div>
+      </div>
+      <div class="progress" style="height: 10px;">
+        <div class="progress-bar" style="width: {{ weekly_progress }}%; background: linear-gradient(90deg, #1f7ae0, #19b6a0);"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-8">
+    <div class="panel-card">
+      <div class="d-flex justify-content-between mb-2">
+        <h6 class="mb-0">近7天打卡趋势</h6>
+        <a href="{% url 'learning_logs:checkin' %}" class="btn btn-sm btn-brand">去打卡</a>
+      </div>
+      <div id="checkinLineChart" style="height: 280px;"></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="panel-card h-100">
+      <h6>连续打卡</h6>
+      <div class="display-5 fw-bold mb-2">{{ streak }} 天</div>
+      <div class="mb-3"><span class="tag-chip">{{ badge }}</span></div>
+      {% if today_checked %}
+      <div class="alert alert-success mb-0">{{ checkin_status_text }}</div>
+      {% else %}
+      <div class="alert alert-warning mb-0">{{ checkin_status_text }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="panel-card">
+      <h6 class="mb-2">分类笔记占比</h6>
+      <div id="topicPieChart" style="height: 280px;"></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="panel-card">
+      <h6 class="mb-2">近7天笔记新增</h6>
+      <div id="entryBarChart" style="height: 280px;"></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="panel-card">
+      <h6 class="mb-2">高频标签统计</h6>
+      <div id="tagWordCloudChart" style="height: 300px;"></div>
+    </div>
+  </div>
+  <div class="col-12">
+    <div class="panel-card">
+      <h6 class="mb-2">学习时段热力图（近30天）</h6>
+      <div id="heatmapChart" style="height: 360px;"></div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2/dist/echarts-wordcloud.min.js"></script>
+<script>
+  $(function() {
+    $.getJSON("{% url 'learning_logs:api_checkin_stats' %}", function(data) {
+      const checkinChart = echarts.init(document.getElementById('checkinLineChart'));
+      checkinChart.setOption({
+        tooltip: { trigger: 'axis' },
+        xAxis: { type: 'category', data: data.labels },
+        yAxis: {
+          type: 'value',
+          min: 0,
+          minInterval: 1,
+          interval: 1,
+          axisLabel: { formatter: '{value}' }
+        },
+        series: [{
+          data: data.series,
+          type: 'line',
+          smooth: true,
+          areaStyle: { color: 'rgba(31,122,224,0.2)' },
+          lineStyle: { width: 3, color: '#1f7ae0' }
+        }]
+      });
+    });
+
+    $.getJSON("{% url 'learning_logs:api_note_stats' %}", function(data) {
+      const pieChart = echarts.init(document.getElementById('topicPieChart'));
+      let pieData = data.topic_labels.map(function(label, idx) {
+        return { name: label, value: data.topic_values[idx] };
+      });
+      
+      pieData.sort(function(a, b) {
+        return b.value - a.value;
+      });
+      if (pieData.length > 5) {
+        const top5 = pieData.slice(0, 5);
+        const othersValue = pieData.slice(5).reduce(function(sum, item) {
+          return sum + item.value;
+        }, 0);
+        top5.push({ name: '其他', value: othersValue });
+        pieData = top5;
+      }
+
+      pieChart.setOption({
+        tooltip: { trigger: 'item' },
+        legend: { bottom: 0, textStyle: { fontSize: 12 } },
+        series: [{ 
+          type: 'pie', 
+          radius: ['35%', '55%'], 
+          center: ['50%', '45%'],
+          data: pieData 
+        }]
+      });
+
+      const barChart = echarts.init(document.getElementById('entryBarChart'));
+      barChart.setOption({
+        tooltip: { trigger: 'axis' },
+        xAxis: { type: 'category', data: data.trend_labels },
+        yAxis: {
+          type: 'value',
+          min: 0,
+          minInterval: 1,
+          axisLabel: { formatter: '{value}' },
+          splitNumber: 5
+        },
+        series: [{ type: 'bar', data: data.trend_values, itemStyle: { color: '#19b6a0' } }]
+      });
+
+      const tagChart = echarts.init(document.getElementById('tagWordCloudChart'));
+      const tagWordData = data.tag_labels.map(function(label, idx) {
+        return { name: label, value: data.tag_values[idx] };
+      }).filter(function(item) {
+        return item.value > 0;
+      }).sort(function(a, b) {
+        return b.value - a.value;
+      });
+
+      const tagColors = ['#1f7ae0', '#19b6a0', '#f08d49', '#7c8cff', '#f2b705', '#2aa876', '#ff6b6b'];
+
+      tagChart.setOption({
+        tooltip: {
+          trigger: 'item',
+          formatter: function(params) {
+            return params.name + '：' + params.value;
+          }
+        },
+        series: [{
+          type: 'wordCloud',
+          shape: 'circle',
+          rotationRange: [0, 0],
+          gridSize: 8,
+          sizeRange: [18, 60],
+          layoutAnimation: true,
+          drawOutOfBound: false,
+          shrinkToFit: true,
+          spiral: 'archimedean',
+          left: '4%',
+          top: '4%',
+          width: '92%',
+          height: '84%',
+          textStyle: {
+            fontFamily: 'Noto Sans SC',
+            fontWeight: 700,
+            color: function(params) {
+              return tagColors[params.dataIndex % tagColors.length];
+            }
+          },
+          emphasis: {
+            focus: 'self',
+            textStyle: {
+              shadowBlur: 12,
+              shadowColor: 'rgba(0, 0, 0, 0.16)'
+            }
+          },
+          data: tagWordData
+        }]
+      });
+
+      const heatmapChart = echarts.init(document.getElementById('heatmapChart'));
+      heatmapChart.setOption({
+        tooltip: {
+          position: 'top',
+          formatter: function(params) {
+            const val = params.data || [0, 0, 0];
+            return data.heatmap_weekdays[val[1]] + ' ' + data.heatmap_hours[val[0]] + '<br/>记录: ' + val[2];
+          }
+        },
+        grid: { top: '12%', height: '68%' },
+        xAxis: { type: 'category', data: data.heatmap_hours, splitArea: { show: true } },
+        yAxis: { type: 'category', data: data.heatmap_weekdays, splitArea: { show: true } },
+        visualMap: {
+          min: 0,
+          max: data.heatmap_max,
+          calculable: true,
+          orient: 'horizontal',
+          left: 'center',
+          bottom: '2%'
+        },
+        series: [{
+          type: 'heatmap',
+          data: data.heatmap_data,
+          emphasis: { itemStyle: { shadowBlur: 8, shadowColor: 'rgba(0,0,0,0.35)' } }
+        }]
+      });
+    });
+
+    window.addEventListener('resize', function() {
+      echarts.getInstanceByDom(document.getElementById('checkinLineChart'))?.resize();
+      echarts.getInstanceByDom(document.getElementById('topicPieChart'))?.resize();
+      echarts.getInstanceByDom(document.getElementById('entryBarChart'))?.resize();
+      echarts.getInstanceByDom(document.getElementById('tagWordCloudChart'))?.resize();
+      echarts.getInstanceByDom(document.getElementById('heatmapChart'))?.resize();
+    });
+  });
+</script>
+{% endblock extra_js %}

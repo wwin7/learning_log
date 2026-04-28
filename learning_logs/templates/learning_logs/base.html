@@ -1,74 +1,1025 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN" data-theme="light">
 <head>
- <meta charset="utf-8">
- <meta name="viewport" content="width=device-width, initial-scale=1">
- <title>Learning Log</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}学习日志中心{% endblock title %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
+  <style>
+    :root {
+      --bg-main: #f4f7fb;
+      --bg-surface: #ffffff;
+      --bg-soft: #eef4ff;
+      --text-main: #122033;
+      --text-secondary: #57667a;
+      --brand: #1f7ae0;
+      --brand-2: #19b6a0;
+      --shadow-lg: 0 20px 45px rgba(16, 32, 64, 0.12);
+      --shadow-sm: 0 8px 24px rgba(18, 34, 63, 0.08);
+      --border-soft: rgba(31, 122, 224, 0.16);
+    }
 
- {% load django_bootstrap5 %}
- {% bootstrap_css %}
- {% bootstrap_javascript %}
+    html[data-theme="dark"] {
+      --bg-main: #111723;
+      --bg-surface: #1c2433;
+      --bg-soft: #273246;
+      --text-main: #e7edf8;
+      --text-secondary: #9cb0cb;
+      --brand: #50a8ff;
+      --brand-2: #34d8be;
+      --shadow-lg: 0 20px 40px rgba(5, 8, 16, 0.45);
+      --shadow-sm: 0 8px 22px rgba(5, 8, 16, 0.35);
+      --border-soft: rgba(80, 168, 255, 0.3);
+    }
 
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at 10% 20%, rgba(31, 122, 224, 0.14), transparent 36%),
+        radial-gradient(circle at 90% 0%, rgba(25, 182, 160, 0.16), transparent 28%),
+        var(--bg-main);
+      min-height: 100vh;
+      transition: background-color .3s ease, color .3s ease;
+    }
+
+    .layout-shell {
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, var(--bg-surface), var(--bg-soft));
+      border-right: 1px solid var(--border-soft);
+      box-shadow: var(--shadow-sm);
+      min-height: 100vh;
+      position: sticky;
+      top: 0;
+      max-height: 100vh;
+      overflow-y: auto;
+    }
+
+    .brand-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: .04em;
+      font-weight: 700;
+      color: var(--text-main);
+      text-decoration: none;
+    }
+
+    .nav-pills .nav-link {
+      color: var(--text-secondary);
+      border-radius: 12px;
+      margin-bottom: .4rem;
+      padding: .6rem .85rem;
+      transition: transform .2s ease, background-color .2s ease;
+    }
+
+    .nav-pills .nav-link:hover,
+    .nav-pills .nav-link.active {
+      background-color: rgba(31, 122, 224, 0.12);
+      color: var(--brand);
+      transform: translateX(2px);
+    }
+
+    .topbar-card,
+    .panel-card {
+      border: 1px solid var(--border-soft);
+      border-radius: 20px;
+      background: var(--bg-surface);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .topbar-card {
+      padding: .9rem 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .panel-card {
+      padding: 1.2rem;
+      animation: floatin .45s ease;
+    }
+
+    @keyframes floatin {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .btn-brand {
+      background: linear-gradient(120deg, var(--brand), var(--brand-2));
+      border: none;
+      color: #fff;
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+      transition: transform .2s ease;
+    }
+
+    .btn-brand:hover {
+      transform: translateY(-1px);
+      color: #fff;
+    }
+
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: .2rem .55rem;
+      background: rgba(31, 122, 224, 0.12);
+      color: var(--brand);
+      border-radius: 999px;
+      font-size: .78rem;
+      margin-right: .35rem;
+      margin-bottom: .35rem;
+    }
+
+    .profile-trigger {
+      text-decoration: none;
+      color: var(--text-main);
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      padding: .6rem;
+      background: rgba(31, 122, 224, 0.05);
+      transition: all .2s ease;
+    }
+
+    .profile-trigger:hover {
+      background: rgba(31, 122, 224, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .avatar-img {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(31, 122, 224, 0.2);
+    }
+
+    .profile-menu:hover .dropdown-menu {
+      display: block;
+      margin-top: 0;
+    }
+
+    .global-search input {
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      background: var(--bg-surface);
+      color: var(--text-main);
+    }
+
+    .menu-action-btn {
+      width: 100%;
+      border: none;
+      background: transparent;
+      text-align: left;
+      padding: .25rem .75rem;
+      color: var(--text-main);
+      border-radius: 8px;
+    }
+
+    .menu-action-btn:hover {
+      background: rgba(31, 122, 224, 0.1);
+    }
+
+    .content-wrap {
+      padding: 1.1rem;
+    }
+
+    .timer-ring-bg {
+      stroke: #dfe6ee;
+      stroke-width: 8;
+      fill: none;
+    }
+
+    .timer-ring-main {
+      stroke: #1f7ae0;
+      stroke-width: 8;
+      fill: none;
+      stroke-linecap: round;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+      transition: stroke-dashoffset .35s linear, stroke .2s ease;
+    }
+
+    .timer-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pomodoro-compact {
+      border: 1px solid var(--border-soft);
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(31, 122, 224, 0.08), rgba(25, 182, 160, 0.08));
+      box-shadow: var(--shadow-sm);
+    }
+
+    .pomodoro-compact-ring {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      margin: 0 auto;
+    }
+
+    .pomodoro-compact-time {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.85rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .pomodoro-compact-status {
+      min-height: 1.2rem;
+      color: var(--text-secondary);
+      font-size: .8rem;
+      margin-top: .25rem;
+    }
+
+    .pomodoro-compact-actions .btn {
+      border-radius: 12px;
+    }
+
+    @media (max-width: 991px) {
+      .sidebar {
+        min-height: auto;
+        position: static;
+      }
+      .content-wrap {
+        padding: .75rem;
+      }
+    }
+
+    /* ==== 新增组件样式 (Timeline & Tagify Override) ==== */
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+      margin-top: 1rem;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 0.5rem;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border-soft);
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -1.82rem;
+      top: 4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--brand);
+      border: 3px solid var(--bg-surface);
+      box-shadow: 0 0 0 2px rgba(31, 122, 224, 0.2);
+    }
+    .timeline-date {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.2rem;
+    }
+    .timeline-content {
+      background: var(--bg-soft);
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      color: var(--text-main);
+      font-size: 0.95rem;
+    }
+
+    /* ==== Tagify Override ==== */
+    .tagify {
+      --tag-bg: rgba(31, 122, 224, 0.12);
+      --tag-text-color: var(--brand);
+      --tag-hover: rgba(31, 122, 224, 0.2);
+      border-radius: 8px;
+      border-color: #dee2e6;
+    }
+    html[data-theme="dark"] .tagify {
+      border-color: var(--border-soft);
+      --tags-focus-border-color: var(--brand);
+      --tag-text-color: #fff;
+    }
+  </style>
 </head>
-
 <body>
+  <div class="container-fluid layout-shell">
+    <div class="row">
+      <aside class="col-lg-3 col-md-4 sidebar p-3 d-flex flex-column">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <a class="brand-title" href="{% url 'learning_logs:index' %}">LEARN HUB</a>
+        </div>
 
- <nav class="navbar navbar-expand-md navbar-light bg-light mb-4 border">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="{% url 'learning_logs:index' %}">
-        Learning Log</a>
- 
-     <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-      data-bs-target="#navbarCollapse" aria-controls="navbarCollapse"
-      aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-     </button>
- 
-     <div class="collapse navbar-collapse" id="navbarCollapse">
-      <ul class="navbar-nav me-auto mb-2 mb-md-0">
-       <li class="nav-item">
-        <a class="nav-link" href="{% url 'learning_logs:topics' %}">
-          Topics</a></li>
-      </ul> <!-- End of links on left side of navbar -->
+        {% if user.is_authenticated and current_profile %}
+        <div class="dropdown profile-menu mb-3">
+          <div class="d-flex align-items-center gap-2 profile-trigger">
+            <img src="{{ current_profile.avatar_url }}" alt="avatar" class="avatar-img">
+            <div>
+              <div class="fw-semibold small">{{ user.username }}</div>
+            </div>
+          </div>
+          <ul class="dropdown-menu shadow-sm border-0">
+            <li><a class="dropdown-item" href="{% url 'accounts:settings' %}"><i class="bi bi-gear me-2"></i>设置</a></li>
+            <li><a class="dropdown-item" href="{% url 'learning_logs:recycle_bin' %}"><i class="bi bi-trash me-2"></i>回收站</a></li>
+            <li>
+              <button id="themeToggleMenu" type="button" class="menu-action-btn">
+                <i id="themeToggleIcon" class="bi bi-moon-stars me-2"></i>
+                <span id="themeToggleText">切换深色模式</span>
+              </button>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form action="{% url 'accounts:logout' %}" method="post" class="px-3 py-1">
+                {% csrf_token %}
+                <button class="btn btn-outline-secondary btn-sm w-100" type="submit">退出登录</button>
+              </form>
+            </li>
+          </ul>
+        </div>
+        {% endif %}
 
-      <!-- Account-related links -->
-      <ul class="navbar-nav ms-auto mb-2 mb-md-0">
-
-       {% if user.is_authenticated %}
-        <li class="nav-item">
-         <span class="navbar-text me-2">Hello, {{ user.username }}.
-          </span></li>
-       {% else %}
-       <li class="nav-item">
-        <a class="nav-link" href="{% url 'accounts:register' %}">
-            Register</a></li>
-       <li class="nav-item">
-        <a class="nav-link" href="{% url 'accounts:login' %}">
-            Log in</a></li>
-       {% endif %}
-       </ul> <!-- End of account-related links --> 
-       
-       {% if user.is_authenticated %}
-        <form action="{% url 'accounts:logout' %}" method='post'>
-          {% csrf_token %}
-          <button name='submit' class='btn btn-outline-secondary btn-sm'>
-            Log out</button>
+        <form class="global-search mb-3" action="{% url 'learning_logs:global_search' %}" method="get">
+          <div class="input-group">
+            <span class="input-group-text border-0 bg-transparent"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" name="q" value="{{ request.GET.q }}" placeholder="全局搜索笔记/分类...">
+          </div>
         </form>
-       {% endif %}
 
-    </div> <!-- Closes collapsible parts of navbar -->
- 
-   </div> <!-- Closes navbar's container -->
-</nav> <!-- End of navbar -->
+        <ul class="nav nav-pills flex-column">
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'learning_logs:dashboard' %}">
+              <i class="bi bi-speedometer2 me-2"></i>仪表盘
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'checkin' %}active{% endif %}" href="{% url 'learning_logs:checkin' %}">
+              <i class="bi bi-calendar-check me-2"></i>每日打卡
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'pomodoro' %}active{% endif %}" href="{% url 'learning_logs:pomodoro' %}">
+              <i class="bi bi-stopwatch me-2"></i>番茄工作法
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'topics' or request.resolver_match.url_name == 'topic' %}active{% endif %}" href="{% url 'learning_logs:topics' %}">
+              <i class="bi bi-journal-bookmark me-2"></i>分类笔记
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'new_topic' %}active{% endif %}" href="{% url 'learning_logs:new_topic' %}">
+              <i class="bi bi-plus-square-dotted me-2"></i>新建分类
+            </a>
+          </li>
+        </ul>
 
-<main class="container">
-  <div class="pb-2 mb-2 border-bottom">
-    {% block page_header %}{% endblock page_header %}
+        {% if request.resolver_match.url_name != 'pomodoro' %}
+        <div id="pomodoroSidebar" class="pomodoro-compact panel-card p-3 mt-3 mb-3 d-none">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="small text-secondary text-uppercase">番茄计时</div>
+            <span id="pomodoroSidebarPhase" class="badge rounded-pill text-bg-light border">工作</span>
+          </div>
+
+          <div class="pomodoro-compact-ring">
+            <svg viewBox="0 0 120 120" class="w-100 h-100">
+              <circle class="timer-ring-bg" cx="60" cy="60" r="45"></circle>
+              <circle id="pomodoroSidebarRing" class="timer-ring-main" cx="60" cy="60" r="45"></circle>
+            </svg>
+            <div class="timer-center text-center px-2">
+              <div id="pomodoroSidebarDisplay" class="pomodoro-compact-time">25:00</div>
+              <div id="pomodoroSidebarStatus" class="pomodoro-compact-status">未开始</div>
+            </div>
+          </div>
+
+          <div class="d-grid gap-2 mt-3 pomodoro-compact-actions">
+            <button id="pomodoroSidebarToggle" type="button" class="btn btn-brand btn-sm">开始计时</button>
+            <button id="pomodoroSidebarExit" type="button" class="btn btn-outline-danger btn-sm">退出番茄</button>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if user.is_authenticated and current_profile and current_profile.signature %}
+        <div class="panel-card mt-auto p-3">
+          <div class="small" style="white-space: pre-wrap;"><span class="me-1">🌸</span>{{ current_profile.signature }}</div>
+        </div>
+        {% endif %}
+      </aside>
+
+      <main class="col-lg-9 col-md-8 content-wrap">
+        <div class="topbar-card d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div class="fw-semibold">{% block page_header %}学习日志管理{% endblock page_header %}</div>
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-secondary btn-sm" type="button" title="返回上一级" onclick="window.history.back();">
+              <i class="bi bi-arrow-left"></i>
+            </button>
+          </div>
+        </div>
+
+        {% if messages %}
+        <div class="mb-3">
+          {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }} panel-card py-2 mb-2">{{ message }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock content %}
+      </main>
+    </div>
   </div>
-  <div>
-    {% block content %}{% endblock content %}
-  </div>
-</main>
 
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+  <script>
+    (function() {
+      const storageKey = 'll_theme';
+      const root = document.documentElement;
+      const themeToggleMenu = document.getElementById('themeToggleMenu');
+      const themeToggleIcon = document.getElementById('themeToggleIcon');
+      const themeToggleText = document.getElementById('themeToggleText');
+
+      function updateThemeButton() {
+        if (!themeToggleIcon || !themeToggleText) return;
+        const isDark = root.getAttribute('data-theme') === 'dark';
+        themeToggleIcon.className = isDark ? 'bi bi-sun me-2' : 'bi bi-moon-stars me-2';
+        themeToggleText.textContent = isDark ? '切换浅色模式' : '切换深色模式';
+      }
+
+      const current = localStorage.getItem(storageKey);
+      if (current) {
+        root.setAttribute('data-theme', current);
+      }
+      updateThemeButton();
+
+      if (themeToggleMenu) {
+        themeToggleMenu.addEventListener('click', function() {
+          const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          root.setAttribute('data-theme', next);
+          localStorage.setItem(storageKey, next);
+          updateThemeButton();
+        });
+      }
+
+      document.querySelectorAll('input, textarea, select').forEach(function(el) {
+        if (el.type === 'checkbox' || el.type === 'radio' || el.type === 'submit' || el.type === 'button') {
+          return;
+        }
+        if (el.type === 'color') {
+          el.classList.add('form-control', 'form-control-color');
+          return;
+        }
+        el.classList.add('form-control');
+      });
+
+      // 初始化全局的 Tagify 输入框
+      document.querySelectorAll('input[name="tags"], textarea[name="tags"]').forEach(function(el) {
+        new Tagify(el, {
+          originalInputValueFormat: valuesArr => valuesArr.map(item => item.value).join(','),
+          delimiters: ",| |，", // 支持中英文逗号和空格分词
+          maxTags: 6,
+          dropdown: {
+            enabled: 0
+          }
+        });
+      });
+
+      // 离开页面前检查是否存在未提交的表单修改
+      let hasUnsavedChanges = false;
+      document.querySelectorAll('form').forEach(function(form) {
+        if ((form.method || '').toLowerCase() !== 'post') {
+          return;
+        }
+
+        form.querySelectorAll('input, textarea, select').forEach(function(field) {
+          if (['hidden', 'submit', 'button', 'reset'].includes(field.type)) {
+            return;
+          }
+          field.addEventListener('input', function() {
+            hasUnsavedChanges = true;
+          });
+          field.addEventListener('change', function() {
+            hasUnsavedChanges = true;
+          });
+        });
+
+        form.addEventListener('submit', function() {
+          hasUnsavedChanges = false;
+        });
+      });
+
+      window.addEventListener('beforeunload', function(event) {
+        if (!hasUnsavedChanges) {
+          return;
+        }
+        event.preventDefault();
+        event.returnValue = '';
+      });
+
+      (function() {
+        const STORAGE_KEY = 'll_pomodoro_state_v2';
+        const RING_LENGTH = 2 * Math.PI * 45;
+        const isPomodoroPage = Boolean(document.getElementById('pomodoroPage'));
+
+        const mainView = {
+          ring: document.getElementById('timerRing'),
+          display: document.getElementById('timerDisplay'),
+          status: document.getElementById('timerStatus'),
+          start: document.getElementById('startBtn'),
+          reset: document.getElementById('resetBtn'),
+          exit: document.getElementById('exitBtn'),
+          work: document.getElementById('workModeBtn'),
+          break: document.getElementById('breakModeBtn'),
+          workInput: document.getElementById('workMinutesInput'),
+          breakInput: document.getElementById('breakMinutesInput'),
+          completed: document.getElementById('completedPomodoros'),
+          focus: document.getElementById('focusMinutes'),
+          streak: document.getElementById('currentStreak')
+        };
+
+        const sidebarView = isPomodoroPage ? null : {
+          root: document.getElementById('pomodoroSidebar'),
+          ring: document.getElementById('pomodoroSidebarRing'),
+          display: document.getElementById('pomodoroSidebarDisplay'),
+          status: document.getElementById('pomodoroSidebarStatus'),
+          phase: document.getElementById('pomodoroSidebarPhase'),
+          toggle: document.getElementById('pomodoroSidebarToggle'),
+          exit: document.getElementById('pomodoroSidebarExit')
+        };
+
+        if (!mainView.ring && !sidebarView) {
+          return;
+        }
+
+        function todayKey() {
+          const d = new Date();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return d.getFullYear() + '-' + m + '-' + day;
+        }
+
+        function clamp(value, min, max) {
+          return Math.max(min, Math.min(max, Number(value) || min));
+        }
+
+        function createDefaultState() {
+          return {
+            date: todayKey(),
+            workMinutes: 25,
+            breakMinutes: 5,
+            completedPomodoros: 0,
+            focusMinutes: 0,
+            currentStreak: 0,
+            phase: 'work',
+            sessionActive: false,
+            isRunning: false,
+            timeLeft: 25 * 60,
+            totalSeconds: 25 * 60,
+            endAt: null
+          };
+        }
+
+        let state = loadPomodoroState();
+        let timerFrame = null;
+
+        function getPhaseSeconds(phase, source) {
+          const minutesSource = source || state || createDefaultState();
+          return (phase === 'break' ? minutesSource.breakMinutes : minutesSource.workMinutes) * 60;
+        }
+
+        function loadPomodoroState() {
+          const next = createDefaultState();
+
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) {
+              return next;
+            }
+
+            const data = JSON.parse(raw);
+            next.workMinutes = clamp(data.workMinutes, 1, 90);
+            next.breakMinutes = clamp(data.breakMinutes, 1, 60);
+
+            if (data.date === todayKey()) {
+              next.completedPomodoros = clamp(data.completedPomodoros, 0, 9999);
+              next.focusMinutes = clamp(data.focusMinutes, 0, 9999);
+              next.currentStreak = clamp(data.currentStreak, 0, 9999);
+            }
+
+            next.phase = data.phase === 'break' ? 'break' : 'work';
+            next.totalSeconds = getPhaseSeconds(next.phase, next);
+            next.timeLeft = next.totalSeconds;
+
+            if (data.sessionActive) {
+              next.sessionActive = true;
+              next.isRunning = Boolean(data.isRunning);
+              next.endAt = data.endAt ? Number(data.endAt) : null;
+              next.timeLeft = clamp(data.timeLeft, 1, next.totalSeconds);
+            }
+          } catch (error) {
+            console.warn('Load pomodoro state failed:', error);
+          }
+
+          return normalizePomodoroState(next);
+        }
+
+        function normalizePomodoroState(next) {
+          next.workMinutes = clamp(next.workMinutes, 1, 90);
+          next.breakMinutes = clamp(next.breakMinutes, 1, 60);
+          next.completedPomodoros = clamp(next.completedPomodoros, 0, 9999);
+          next.focusMinutes = clamp(next.focusMinutes, 0, 99999);
+          next.currentStreak = clamp(next.currentStreak, 0, 99999);
+          next.phase = next.phase === 'break' ? 'break' : 'work';
+          next.totalSeconds = getPhaseSeconds(next.phase, next);
+
+          if (!next.sessionActive) {
+            next.isRunning = false;
+            next.endAt = null;
+            next.timeLeft = next.totalSeconds;
+            return next;
+          }
+
+          if (!next.isRunning || !next.endAt) {
+            next.endAt = null;
+            next.timeLeft = clamp(next.timeLeft, 1, next.totalSeconds);
+          }
+
+          return next;
+        }
+
+        function savePomodoroState() {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            date: todayKey(),
+            workMinutes: state.workMinutes,
+            breakMinutes: state.breakMinutes,
+            completedPomodoros: state.completedPomodoros,
+            focusMinutes: state.focusMinutes,
+            currentStreak: state.currentStreak,
+            phase: state.phase,
+            sessionActive: state.sessionActive,
+            isRunning: state.isRunning,
+            timeLeft: state.timeLeft,
+            totalSeconds: state.totalSeconds,
+            endAt: state.endAt
+          }));
+        }
+
+        function formatTime(seconds) {
+          const safeSeconds = Math.max(0, Math.ceil(Number(seconds) || 0));
+          const minutes = String(Math.floor(safeSeconds / 60)).padStart(2, '0');
+          const rest = String(safeSeconds % 60).padStart(2, '0');
+          return minutes + ':' + rest;
+        }
+
+        function getPhaseLabel() {
+          return state.phase === 'break' ? '休息' : '工作';
+        }
+
+        function getStatusText() {
+          if (!state.sessionActive) {
+            return '未开始';
+          }
+          if (state.isRunning) {
+            return state.phase === 'break' ? '休息中，放松一下' : '专注中，请保持节奏';
+          }
+          return state.phase === 'break' ? '已暂停休息' : '已暂停专注';
+        }
+
+        function getRemainingSeconds() {
+          if (!state.sessionActive) {
+            return state.timeLeft;
+          }
+
+          if (state.isRunning && state.endAt) {
+            return Math.max(0, (state.endAt - Date.now()) / 1000);
+          }
+
+          return state.timeLeft;
+        }
+
+        function updateRing(view, progress, isBreakPhase) {
+          if (!view || !view.ring) {
+            return;
+          }
+          view.ring.style.strokeDasharray = String(RING_LENGTH);
+          view.ring.style.strokeDashoffset = String(RING_LENGTH * (1 - progress));
+          view.ring.style.stroke = isBreakPhase ? '#19b86b' : '#1f7ae0';
+        }
+
+        function syncStateToClock() {
+          if (!state.sessionActive || !state.isRunning || !state.endAt) {
+            return;
+          }
+
+          const now = Date.now();
+          let changed = false;
+
+          while (state.sessionActive && state.isRunning && state.endAt <= now) {
+            changed = true;
+            if (state.phase === 'work') {
+              state.completedPomodoros += 1;
+              state.focusMinutes += state.workMinutes;
+              state.currentStreak += 1;
+              state.phase = 'break';
+              state.totalSeconds = getPhaseSeconds('break', state);
+              state.endAt += state.totalSeconds * 1000;
+            } else {
+              state.phase = 'work';
+              state.totalSeconds = getPhaseSeconds('work', state);
+              state.endAt += state.totalSeconds * 1000;
+            }
+          }
+
+          if (changed) {
+            state.timeLeft = Math.max(1, Math.ceil((state.endAt - now) / 1000));
+            savePomodoroState();
+          }
+        }
+
+        function renderView(view) {
+          if (!view) {
+            return;
+          }
+
+          if (view.root) {
+            view.root.classList.toggle('d-none', !state.sessionActive);
+          }
+
+          const remainingSeconds = getRemainingSeconds();
+          const progress = state.totalSeconds <= 0 ? 0 : (state.totalSeconds - remainingSeconds) / state.totalSeconds;
+          updateRing(view, Math.max(0, Math.min(1, progress)), state.phase === 'break');
+
+          if (view.display) {
+            view.display.textContent = formatTime(remainingSeconds);
+          }
+          if (view.status) {
+            view.status.textContent = getStatusText();
+          }
+          if (view.phase) {
+            view.phase.textContent = getPhaseLabel();
+          }
+          if (view.start) {
+            view.start.innerHTML = state.isRunning
+              ? '<i class="bi bi-pause-fill me-1"></i>暂停'
+              : state.sessionActive
+                ? '<i class="bi bi-play-fill me-1"></i>继续'
+                : '<i class="bi bi-play-fill me-1"></i>开始';
+          }
+          if (view.toggle) {
+            view.toggle.innerHTML = state.isRunning
+              ? '<i class="bi bi-pause-fill me-1"></i>暂停'
+              : '<i class="bi bi-play-fill me-1"></i>继续';
+          }
+
+          if (view.work) {
+            view.work.className = state.phase === 'work' ? 'btn btn-primary' : 'btn btn-outline-primary';
+          }
+          if (view.break) {
+            view.break.className = state.phase === 'break' ? 'btn btn-success' : 'btn btn-outline-success';
+          }
+          if (view.completed) {
+            view.completed.textContent = String(state.completedPomodoros);
+          }
+          if (view.focus) {
+            view.focus.textContent = String(state.focusMinutes);
+          }
+          if (view.streak) {
+            view.streak.textContent = String(state.currentStreak);
+          }
+        }
+
+        function render() {
+          if (mainView.ring) {
+            renderView(mainView);
+          }
+          if (sidebarView) {
+            renderView(sidebarView);
+          }
+        }
+
+        function stopTicker() {
+          if (!timerFrame) {
+            return;
+          }
+          cancelAnimationFrame(timerFrame);
+          timerFrame = null;
+        }
+
+        function startTicker() {
+          if (timerFrame) {
+            return;
+          }
+
+          const frame = function() {
+            syncStateToClock();
+            if (!state.sessionActive || !state.isRunning) {
+              stopTicker();
+              render();
+              return;
+            }
+
+            state.timeLeft = Math.max(0, getRemainingSeconds());
+            render();
+
+            timerFrame = requestAnimationFrame(frame);
+          };
+
+          timerFrame = requestAnimationFrame(frame);
+        }
+
+        function beginSession() {
+          state.sessionActive = true;
+          state.isRunning = true;
+          state.totalSeconds = getPhaseSeconds(state.phase, state);
+          state.timeLeft = state.timeLeft > 0 && state.timeLeft <= state.totalSeconds ? state.timeLeft : state.totalSeconds;
+          state.endAt = Date.now() + state.timeLeft * 1000;
+          savePomodoroState();
+          startTicker();
+          render();
+        }
+
+        function toggleSession() {
+          syncStateToClock();
+
+          if (!state.sessionActive) {
+            beginSession();
+            return;
+          }
+
+          if (state.isRunning) {
+            state.timeLeft = Math.max(1, Math.ceil((state.endAt - Date.now()) / 1000));
+            state.isRunning = false;
+            state.endAt = null;
+            savePomodoroState();
+            stopTicker();
+            render();
+            return;
+          }
+
+          state.isRunning = true;
+          state.endAt = Date.now() + state.timeLeft * 1000;
+          savePomodoroState();
+          startTicker();
+          render();
+        }
+
+        function resetSession() {
+          stopTicker();
+          state.sessionActive = false;
+          state.isRunning = false;
+          state.phase = 'work';
+          state.timeLeft = state.workMinutes * 60;
+          state.totalSeconds = state.timeLeft;
+          state.endAt = null;
+          savePomodoroState();
+          render();
+        }
+
+        function setPhase(phase) {
+          if (state.isRunning) {
+            return;
+          }
+          state.phase = phase === 'break' ? 'break' : 'work';
+          state.timeLeft = getPhaseSeconds(state.phase, state);
+          state.totalSeconds = state.timeLeft;
+          state.sessionActive = false;
+          state.endAt = null;
+          savePomodoroState();
+          render();
+        }
+
+        function updateWorkMinutes(value) {
+          state.workMinutes = clamp(value, 1, 90);
+          if (!state.sessionActive && state.phase === 'work') {
+            state.timeLeft = state.workMinutes * 60;
+            state.totalSeconds = state.timeLeft;
+          }
+          savePomodoroState();
+          render();
+        }
+
+        function updateBreakMinutes(value) {
+          state.breakMinutes = clamp(value, 1, 60);
+          if (!state.sessionActive && state.phase === 'break') {
+            state.timeLeft = state.breakMinutes * 60;
+            state.totalSeconds = state.timeLeft;
+          }
+          savePomodoroState();
+          render();
+        }
+
+        function bindMainEvents() {
+          if (mainView.start) {
+            mainView.start.addEventListener('click', toggleSession);
+          }
+          if (mainView.reset) {
+            mainView.reset.addEventListener('click', resetSession);
+          }
+          if (mainView.exit) {
+            mainView.exit.addEventListener('click', resetSession);
+          }
+          if (mainView.work) {
+            mainView.work.addEventListener('click', function() {
+              setPhase('work');
+            });
+          }
+          if (mainView.break) {
+            mainView.break.addEventListener('click', function() {
+              setPhase('break');
+            });
+          }
+          if (mainView.workInput) {
+            mainView.workInput.addEventListener('change', function() {
+              updateWorkMinutes(mainView.workInput.value);
+              mainView.workInput.value = String(state.workMinutes);
+            });
+          }
+          if (mainView.breakInput) {
+            mainView.breakInput.addEventListener('change', function() {
+              updateBreakMinutes(mainView.breakInput.value);
+              mainView.breakInput.value = String(state.breakMinutes);
+            });
+          }
+        }
+
+        function bindSidebarEvents() {
+          if (!sidebarView) {
+            return;
+          }
+          if (sidebarView.toggle) {
+            sidebarView.toggle.addEventListener('click', toggleSession);
+          }
+          if (sidebarView.exit) {
+            sidebarView.exit.addEventListener('click', resetSession);
+          }
+        }
+
+        function tickFromState() {
+          syncStateToClock();
+
+          if (state.sessionActive && state.isRunning) {
+            state.timeLeft = Math.max(0, getRemainingSeconds());
+            state.totalSeconds = getPhaseSeconds(state.phase, state);
+            startTicker();
+          } else {
+            stopTicker();
+          }
+
+          render();
+        }
+
+        if (mainView.ring || sidebarView) {
+          if (mainView.ring) {
+            mainView.ring.style.strokeDasharray = String(RING_LENGTH);
+          }
+          if (sidebarView && sidebarView.ring) {
+            sidebarView.ring.style.strokeDasharray = String(RING_LENGTH);
+          }
+
+          bindMainEvents();
+          bindSidebarEvents();
+
+          if (mainView.workInput) {
+            mainView.workInput.value = String(state.workMinutes);
+          }
+          if (mainView.breakInput) {
+            mainView.breakInput.value = String(state.breakMinutes);
+          }
+
+          tickFromState();
+
+          window.addEventListener('storage', function(event) {
+            if (event.key !== STORAGE_KEY) {
+              return;
+            }
+            state = loadPomodoroState();
+            tickFromState();
+          });
+
+          document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+              state = loadPomodoroState();
+              tickFromState();
+            }
+          });
+        }
+      })();
+    })();
+  </script>
+  {% block extra_js %}{% endblock extra_js %}
 </body>
 </html>

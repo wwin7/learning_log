@@ -1,23 +1,76 @@
 {% extends 'learning_logs/base.html' %}
 
-{% block page_header %}
- <h1>Topics</h1>
-{% endblock page_header %}
+{% block title %}分类列表{% endblock title %}
+
+{% block page_header %}分类列表{% endblock page_header %}
 
 {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">我的学习分类 <span class="small text-secondary">(拖拽卡片可排序)</span></h5>
+    <a class="btn btn-brand" href="{% url 'learning_logs:new_topic' %}">+ 新建分类</a>
+</div>
 
-    <ul class="list-group border-bottom pb-2 mb-4">
-
-        {% for topic in topics %}
-        <li class="list-group-item border-0">
-         <a href="{% url 'learning_logs:topic' topic.id %}">
-          {{ topic.text }}</a>
-        </li>
-        {% empty %}
-        <li class="list-group-item border-0">No topics have been added yet.</li>
-        {% endfor %}
-    </ul>
-
-    <a href="{% url 'learning_logs:new_topic' %}">Add a new topic</a>
+<div class="row g-3" id="topicSortable">
+    {% for topic in topics %}
+    <div class="col-xl-4 col-md-6 topic-sort-item" data-topic-id="{{ topic.id }}">
+        <div class="panel-card h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <a class="fw-semibold text-decoration-none" href="{% url 'learning_logs:topic' topic.id %}">{{ topic.text }}</a>
+                <span class="badge" style="background-color: {{ topic.category_color }}">{{ topic.entry_total }} 篇</span>
+            </div>
+            <div class="mb-2">
+                {% if topic.tags %}
+                    <span class="tag-chip">{{ topic.tags }}</span>
+                {% else %}
+                    <span class="text-secondary small">暂无标签</span>
+                {% endif %}
+            </div>
+            <div class="small text-secondary">更新于 {{ topic.updated_at|date:'Y-m-d H:i' }}</div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="panel-card text-center py-5">
+            <div class="mb-3 text-secondary">你还没有创建任何分类</div>
+            <a class="btn btn-brand" href="{% url 'learning_logs:new_topic' %}">创建第一个分类</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
 
 {% endblock content %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/jquery-ui-dist@1.13.3/jquery-ui.min.js"></script>
+<script>
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return '';
+    }
+
+    $(function() {
+        $('#topicSortable').sortable({
+            items: '.topic-sort-item',
+            opacity: 0.9,
+            update: function() {
+                const orderedIds = $('.topic-sort-item').map(function() {
+                    return Number($(this).data('topic-id'));
+                }).get();
+
+                $.ajax({
+                    url: "{% url 'learning_logs:api_reorder_topics' %}",
+                    method: 'POST',
+                    contentType: 'application/json',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                    data: JSON.stringify({ ordered_ids: orderedIds }),
+                    error: function() {
+                        alert('排序保存失败，请刷新后重试。');
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock extra_js %}

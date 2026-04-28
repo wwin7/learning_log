@@ -1,0 +1,354 @@
+{% comment %}Shared Yuque-style note editor shell{% endcomment %}
+<div class="entry-editor-shell mx-auto">
+  <div id="editorToast" class="editor-toast" aria-live="polite"></div>
+  <style>
+    .entry-editor-shell {
+      max-width: 900px;
+    }
+
+    .editor-header-card,
+    .editor-body-card,
+    .editor-meta-card {
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      background: var(--bg-surface);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .editor-header-card {
+      position: sticky;
+      top: 12px;
+      z-index: 20;
+      padding: .9rem 1rem;
+      margin-bottom: 1rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .editor-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem;
+      align-items: center;
+    }
+
+    .editor-group {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding-right: .4rem;
+      margin-right: .4rem;
+      border-right: 1px solid rgba(87, 102, 122, 0.12);
+    }
+
+    .editor-toolbar .btn,
+    .editor-toolbar .btn-group .btn {
+      border-radius: 8px;
+      min-width: 2.4rem;
+      height: 2.3rem;
+      padding: 0 .7rem;
+    }
+
+    .editor-toolbar .btn.active,
+    .editor-toolbar .btn[aria-pressed="true"] {
+      background: rgba(19, 119, 235, 0.12);
+      color: var(--brand);
+      border-color: rgba(19, 119, 235, 0.22);
+    }
+
+    .editor-status {
+      font-size: .86rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .editor-body-card {
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .editor-toast {
+      position: fixed;
+      right: 20px;
+      bottom: 24px;
+      z-index: 1200;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      align-items: flex-end;
+    }
+
+    .editor-toast .toast {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-soft);
+      padding: .5rem .8rem;
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+      font-size: .95rem;
+      color: var(--text-primary);
+    }
+
+    .upload-placeholder {
+      opacity: 0.7;
+      font-style: italic;
+    }
+
+    .editor-title-input {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.75rem !important;
+      font-weight: 700;
+        if (data && typeof data.text === 'string' && !textarea.value.trim()) {
+          textarea.value = data.text;
+        }
+        if (tagsInput && typeof data.tags === 'string' && !tagsInput.value.trim()) {
+          tagsInput.value = data.tags;
+          if (window.Tagify && tagsInput.tagify) {
+            tagsInput.tagify.loadOriginalValues(data.tags);
+          }
+        }
+      } catch (error) {
+        console.warn('restore draft failed', error);
+      }
+    }
+
+    function getSelectionRange() {
+      const start = textarea.selectionStart ?? 0;
+      const end = textarea.selectionEnd ?? 0;
+      return { start, end, value: textarea.value };
+    }
+
+    function replaceSelection(before, after) {
+      const range = getSelectionRange();
+      const selected = range.value.slice(range.start, range.end);
+      const nextValue = range.value.slice(0, range.start) + before + selected + after + range.value.slice(range.end);
+      textarea.value = nextValue;
+      const cursor = range.start + before.length + selected.length + after.length;
+      textarea.focus();
+      textarea.setSelectionRange(cursor, cursor);
+      queueSave();
+    }
+
+    function wrapLinePrefix(prefix) {
+      const range = getSelectionRange();
+      const value = range.value;
+      const lineStart = value.lastIndexOf('\n', range.start - 1) + 1;
+      const lineEnd = value.indexOf('\n', range.end);
+      const endIndex = lineEnd === -1 ? value.length : lineEnd;
+      const line = value.slice(lineStart, endIndex);
+      const nextLine = prefix + line.replace(/^\s*/, '');
+      textarea.value = value.slice(0, lineStart) + nextLine + value.slice(endIndex);
+      textarea.focus();
+      textarea.setSelectionRange(lineStart + prefix.length, lineStart + prefix.length + line.length);
+      queueSave();
+    }
+
+    function insertAtCursor(text) {
+      const range = getSelectionRange();
+      const nextValue = range.value.slice(0, range.start) + text + range.value.slice(range.end);
+      textarea.value = nextValue;
+      const cursor = range.start + text.length;
+      textarea.focus();
+      textarea.setSelectionRange(cursor, cursor);
+      queueSave();
+    }
+
+    function toggleList(marker) {
+      const range = getSelectionRange();
+      const value = range.value;
+      const lineStart = value.lastIndexOf('\n', range.start - 1) + 1;
+      const lineEnd = value.indexOf('\n', range.end);
+      const endIndex = lineEnd === -1 ? value.length : lineEnd;
+      const lines = value.slice(lineStart, endIndex).split('\n');
+      const toggled = lines.map((line) => line.startsWith(marker) ? line.replace(marker, '') : marker + line).join('\n');
+      textarea.value = value.slice(0, lineStart) + toggled + value.slice(endIndex);
+      textarea.focus();
+      queueSave();
+    }
+
+    function applyFormat(action) {
+      if (action === 'bold') {
+        replaceSelection('**', '**');
+        return;
+      }
+      if (action === 'italic') {
+        replaceSelection('_', '_');
+        return;
+      }
+      if (action === 'strike') {
+        replaceSelection('~~', '~~');
+        return;
+      }
+      if (action === 'underline') {
+        replaceSelection('<u>', '</u>');
+        return;
+      }
+      if (action === 'quote') {
+        wrapLinePrefix('> ');
+        return;
+      }
+      if (action === 'codeBlock') {
+        insertAtCursor('\n```\n\n```\n');
+        return;
+      }
+      if (action === 'orderedList') {
+        wrapLinePrefix('1. ');
+        return;
+      }
+      if (action === 'bulletList') {
+        wrapLinePrefix('- ');
+        return;
+      }
+      if (action === 'todoList') {
+        wrapLinePrefix('- [ ] ');
+        return;
+      }
+      if (action === 'link') {
+        const url = window.prompt('请输入链接地址');
+        if (!url) return;
+        replaceSelection('[', `](${url})`);
+        return;
+      }
+      if (action === 'image') {
+        const url = window.prompt('请输入图片地址');
+        if (!url) return;
+        insertAtCursor(`![](${url})`);
+        return;
+      }
+      if (action === 'textColor') {
+        const color = window.prompt('请输入颜色值，例如 #1377EB');
+        if (!color) return;
+        replaceSelection(`<span style="color:${escapeHtml(color)}">`, '</span>');
+        return;
+      }
+      if (action === 'highlight') {
+        replaceSelection('<mark>', '</mark>');
+        return;
+      }
+      if (action === 'fullscreen') {
+        isFullscreen = !isFullscreen;
+        document.body.classList.toggle('editor-fullscreen', isFullscreen);
+        if (document.documentElement.requestFullscreen && isFullscreen) {
+          document.documentElement.requestFullscreen().catch(function() {});
+        } else if (document.fullscreenElement && !isFullscreen && document.exitFullscreen) {
+          document.exitFullscreen().catch(function() {});
+        }
+      }
+    }
+
+    function showSelectionToolbar() {
+      const start = textarea.selectionStart ?? 0;
+      const end = textarea.selectionEnd ?? 0;
+      if (start === end) {
+        selectionToolbar.style.display = 'none';
+        return;
+      }
+      const rect = textarea.getBoundingClientRect();
+      const selectionTop = rect.top + window.scrollY - 56;
+      const selectionLeft = Math.min(rect.left + window.scrollX + 20, window.scrollX + window.innerWidth - 280);
+      selectionToolbar.style.top = `${Math.max(12, selectionTop)}px`;
+      selectionToolbar.style.left = `${Math.max(12, selectionLeft)}px`;
+      selectionToolbar.style.display = 'flex';
+      if (hideToolbarTimer) {
+        clearTimeout(hideToolbarTimer);
+      }
+      hideToolbarTimer = window.setTimeout(function() {
+        if (document.activeElement !== textarea) {
+          selectionToolbar.style.display = 'none';
+        }
+      }, 2500);
+    }
+
+    function syncHeadingControls() {
+      const selection = textarea.value.slice(0, textarea.selectionStart ?? 0);
+      const line = selection.split('\n').pop() || '';
+      const match = line.match(/^(#{1,6})\s/);
+      headingSelect.value = match ? `h${match[1].length}` : 'normal';
+    }
+
+    function applyHeading(value) {
+      if (value === 'normal') {
+        return;
+      }
+      const hashes = '#'.repeat(Number(value.slice(1)) || 1);
+      wrapLinePrefix(`${hashes} `);
+    }
+
+    function applyFontSize(value) {
+      if (value === 'normal') {
+        return;
+      }
+      const sizeMap = {
+        small: '0.92rem',
+        medium: '1rem',
+        large: '1.18rem',
+        'x-large': '1.36rem'
+      };
+      const size = sizeMap[value] || '1rem';
+      replaceSelection(`<span style="font-size:${size}">`, '</span>');
+    }
+
+    if (textarea) {
+      restoreDraft();
+      textarea.addEventListener('input', queueSave);
+      textarea.addEventListener('keyup', function() {
+        syncHeadingControls();
+        showSelectionToolbar();
+      });
+      textarea.addEventListener('mouseup', showSelectionToolbar);
+      textarea.addEventListener('scroll', function() {
+        selectionToolbar.style.display = 'none';
+      });
+    }
+
+    if (tagsInput) {
+      tagsInput.addEventListener('input', queueSave);
+      if (tagsInput.tagify) {
+        tagsInput.tagify.on('add', queueSave);
+        tagsInput.tagify.on('remove', queueSave);
+      }
+    }
+
+    document.addEventListener('selectionchange', function() {
+      if (document.activeElement === textarea) {
+        showSelectionToolbar();
+      }
+    });
+
+    document.addEventListener('click', function(event) {
+      const target = event.target.closest('[data-editor-action], [data-inline-action]');
+      if (!target) {
+        return;
+      }
+      const action = target.getAttribute('data-editor-action') || target.getAttribute('data-inline-action');
+      if (action) {
+        applyFormat(action);
+      }
+    });
+
+    headingSelect.addEventListener('change', function() {
+      applyHeading(headingSelect.value);
+      headingSelect.value = 'normal';
+    });
+
+    fontSizeSelect.addEventListener('change', function() {
+      applyFontSize(fontSizeSelect.value);
+      fontSizeSelect.value = 'normal';
+    });
+
+    form.addEventListener('submit', function() {
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+      }
+      setStatus('已保存', false);
+      if (storageKey) {
+        localStorage.removeItem(storageKey);
+      }
+    });
+
+    window.addEventListener('beforeunload', function() {
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+      }
+      saveDraft();
+    });
+  })();
+</script>

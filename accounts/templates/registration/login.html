@@ -1,20 +1,24 @@
 {% extends 'learning_logs/base.html' %}
-{% load django_bootstrap5 %}
 
-{% block page_header %}
- <h2>Log in to your account.</h2>
-{% endblock page_header %}
+{% block title %}登录{% endblock title %}
+
+{% block page_header %}登录账号{% endblock page_header %}
 
 {% block content %}
-
+<div class="panel-card" style="max-width: 520px;">
  {% if form.errors %}
- <p>Your username and password didn't match. Please try again.</p>
+ <div class="alert alert-danger">用户名或密码错误，请重试。</div>
  {% endif %}
 
  <form action="{% url 'accounts:login' %}" method='post'>
     {% csrf_token %}
-    {% bootstrap_form form %}
-    {% bootstrap_button button_type="submit" content="Log in" %}
+    {% for field in form %}
+    <div class="mb-3">
+      <label class="form-label">{{ field.label }}</label>
+      {{ field }}
+    </div>
+    {% endfor %}
+    <button class="btn btn-brand" type="submit">登录</button>
  </form>
- 
+</div>
 {% endblock content %}

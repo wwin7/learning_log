@@ -1,14 +1,14 @@
 {% extends "learning_logs/base.html" %}
 
-{% block content %}
+{% block title %}{{ page_title }}{% endblock title %}
 
-    <p><a href="{% url 'learning_logs:topic' topic.id %}">{{ topic }}</a></p>
-    
-    <p>Add a new entry:</p>
-    <form action="{% url 'learning_logs:new_entry' topic.id %}" method='post'>
-     {% csrf_token %}
-     {{ form.as_div }}
-     <button name='submit'>Add entry</button>
-    </form>
+{% block page_header %}{{ page_title }}{% endblock page_header %}
+
+{% block content %}
+{% include 'learning_logs/entry_editor.html' %}
 
 {% endblock content %}
+
+{% block extra_js %}
+{% include 'learning_logs/entry_editor_js.html' %}
+{% endblock extra_js %}

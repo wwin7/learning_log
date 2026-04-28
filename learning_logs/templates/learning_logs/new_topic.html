@@ -1,12 +1,32 @@
 {% extends "learning_logs/base.html" %}
 
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block page_header %}{{ page_title }}{% endblock page_header %}
+
 {% block content %}
-<p>Add a new topic:</p>
-
-<form action="{% url 'learning_logs:new_topic' %}" method='post'></form>
-    {% csrf_token %}
-    {{ form.as_div }}
-    <button name="submit">Add topic</button>
-</form>
-
+<div class="panel-card">
+    {% if topic %}
+    <form action="{% url form_action topic.id %}" method="post">
+    {% else %}
+    <form action="{% url form_action %}" method="post">
+    {% endif %}
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="mb-3">
+            <label class="form-label fw-medium">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-brand px-4">
+                <i class="bi bi-check2-circle me-1"></i>保存
+            </button>
+            <a href="{% url 'learning_logs:topics' %}" class="btn btn-outline-secondary px-4">返回</a>
+        </div>
+    </form>
+</div>
 {% endblock content %}

@@ -1,15 +1,34 @@
 {% extends 'learning_logs/base.html' %}
 
-{% block page_header %}
-    <div class="p-3 mb-4 bg-light border rounded-3">
-        <div class="container-fluid py-4">
-            <h1 class="display-3">Track your learning.</h1>
+{% block title %}欢迎使用学习日志{% endblock title %}
 
-            <p class="lead">Make your own Learning Log, and keep a list of the
-            topics you're learning about. Whenever you learn something new
-            about a topic, make an entry summarizing what you've learned.</p>
-            <a class="btn btn-primary btn-lg mt-1"
-             href="{% url 'accounts:register' %}">Register &raquo;</a>
+{% block page_header %}今天，你想学点什么？{% endblock page_header %}
+
+{% block content %}
+<section class="panel-card p-4 p-lg-5">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <h1 class="display-5 fw-bold mb-3">将每一次学习，转化为可见的进步</h1>
+            <p class="text-secondary mb-4">
+                不仅仅是极简的笔记系统，更是你的自律陪伴者。从灵感记录到深度复盘，陪你走好终身学习的每一步。
+            </p>
+            <div class="d-flex gap-2 flex-wrap">
+                <a class="btn btn-brand px-4" href="{% url 'accounts:register' %}">立即注册</a>
+                <a class="btn btn-outline-primary px-4" href="{% url 'accounts:login' %}">已有账号，去登录</a>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="panel-card" style="background: linear-gradient(140deg, rgba(31, 122, 224, 0.12), rgba(25, 182, 160, 0.12));">
+                <div class="p-4">
+                    <h5 class="mb-3">你将获得</h5>
+                    <ul class="mb-0" style="list-style-type: none; padding-left: 0;">
+                        <li class="mb-2">🌟 <strong>正向激励</strong>：用可视化的打卡记录，治愈“三分钟热度”</li>
+                        <li class="mb-2">📚 <strong>沉浸记录</strong>：摒弃多余干扰，回归最纯粹的阅读与写作</li>
+                        <li>📊 <strong>科学复盘</strong>：看见自己的付出，让每一次进步都有迹可循</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
-{% endblock page_header %}
+</section>
+{% endblock content %}
