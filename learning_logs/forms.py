@@ -26,8 +26,8 @@ class EntryForm(forms.ModelForm):
             "tags": "标签（输入后回车，或用逗号/空格分隔）",
         }
         widgets = {
-            "text": forms.Textarea(attrs={"class": "form-control", "rows": 18, "placeholder": "记录今天学到了什么...", "spellcheck": "false"}),
-            "tags": forms.TextInput(attrs={"class": "form-control", "placeholder": "输入标签后按回车...", "autocomplete": "off"}),
+            "text": forms.Textarea(attrs={"class": "form-control", "rows": 8, "placeholder": "记录今天学到了什么..."}),
+            "tags": forms.TextInput(attrs={"class": "form-control", "placeholder": "输入标签后按回车..."}),
         }
 
 

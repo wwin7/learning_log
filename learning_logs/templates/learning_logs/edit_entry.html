@@ -5,9 +5,26 @@
 {% block page_header %}{{ page_title }}{% endblock page_header %}
 
 {% block content %}
-{% include 'learning_logs/entry_editor.html' %}
-{% endblock content %}
+<div class="panel-card">
+	<div class="mb-3 small">
+		所属分类：<a href="{% url 'learning_logs:topic' topic.id %}">{{ topic.text }}</a>
+	</div>
 
-{% block extra_js %}
-{% include 'learning_logs/entry_editor_js.html' %}
-{% endblock extra_js %}
+	<form action="{% url form_action entry.id %}" method="post">
+		{% csrf_token %}
+		{% for field in form %}
+		<div class="mb-3">
+			<label class="form-label">{{ field.label }}</label>
+			{{ field }}
+			{% if field.errors %}
+			<div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+			{% endif %}
+		</div>
+		{% endfor %}
+		<div class="d-flex gap-2">
+			<button type="submit" class="btn btn-brand">保存修改</button>
+			<a href="{% url 'learning_logs:topic' topic.id %}" class="btn btn-outline-secondary">返回详情</a>
+		</div>
+	</form>
+</div>
+{% endblock content %}

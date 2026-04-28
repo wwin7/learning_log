@@ -29,5 +29,4 @@ urlpatterns = [
     path('api/checkin-stats/', views.api_checkin_stats, name='api_checkin_stats'),
     path('api/note-stats/', views.api_note_stats, name='api_note_stats'),
     path('api/reorder-topics/', views.api_reorder_topics, name='api_reorder_topics'),
-    path('api/upload-image/', views.api_upload_image, name='api_upload_image'),
 ]

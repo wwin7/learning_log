@@ -12,8 +12,6 @@ from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
 
 from accounts.models import UserProfile
 from .forms import DailyCheckInForm, EntryForm, TopicForm
@@ -235,8 +233,6 @@ def new_entry(request, topic_id):
     "form": form,
     "page_title": "新建笔记",
     "form_action": "learning_logs:new_entry",
-    "editor_mode": "create",
-    "draft_key": f"entry-draft-new-{topic_obj.id}",
   }
   return render(request, "learning_logs/new_entry.html", context)
 
@@ -266,8 +262,6 @@ def edit_entry(request, entry_id):
     "form": form,
     "page_title": "编辑笔记",
     "form_action": "learning_logs:edit_entry",
-    "editor_mode": "edit",
-    "draft_key": f"entry-draft-edit-{entry_obj.id}",
   }
   return render(request, "learning_logs/edit_entry.html", context)
 
@@ -473,31 +467,3 @@ def api_reorder_topics(request):
     Topic.objects.filter(owner=request.user, id=topic_id).update(sort_order=idx)
 
   return JsonResponse({"ok": True})
-
-
-@login_required
-@require_POST
-def api_upload_image(request):
-  """Upload an image file and return its URL.
-
-  Expects a multipart POST with file field named 'image'. Returns JSON {ok: True, url: ...}.
-  """
-  upload = request.FILES.get('image')
-  if not upload:
-    return JsonResponse({"ok": False, "message": "没有上传的文件"}, status=400)
-
-  if not upload.content_type.startswith('image/'):
-    return JsonResponse({"ok": False, "message": "只支持图片文件"}, status=400)
-
-  # Limit size to ~8MB
-  max_size = 8 * 1024 * 1024
-  if upload.size > max_size:
-    return JsonResponse({"ok": False, "message": "图片体积过大（最大 8MB）"}, status=400)
-
-  try:
-    filename = f"uploads/user_{request.user.id}/{int(timezone.now().timestamp())}_{upload.name}"
-    saved_path = default_storage.save(filename, ContentFile(upload.read()))
-    url = default_storage.url(saved_path)
-    return JsonResponse({"ok": True, "url": url})
-  except Exception as exc:
-    return JsonResponse({"ok": False, "message": str(exc)}, status=500)
