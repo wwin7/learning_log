@@ -1,24 +1,211 @@
-{% extends 'learning_logs/base.html' %}
+{% extends "learning_logs/base.html" %}
 
 {% block title %}登录{% endblock title %}
-
-{% block page_header %}登录账号{% endblock page_header %}
+{% block page_header %}登录{% endblock page_header %}
 
 {% block content %}
-<div class="panel-card" style="max-width: 520px;">
- {% if form.errors %}
- <div class="alert alert-danger">用户名或密码错误，请重试。</div>
- {% endif %}
+<style>
+  .sidebar,
+  .topbar-card {
+    display: none !important;
+  }
+  .layout-shell.container-fluid {
+    padding: 0 !important;
+  }
+  .layout-row {
+    display: block !important;
+    min-height: 100vh;
+  }
+  .content-wrap {
+    padding: 0 !important;
+    min-height: 100vh;
+    background: linear-gradient(120deg, #eaf3ff 0%, #f6fbff 45%, #ffffff 100%) !important;
+  }
+  .auth-shell {
+    position: relative;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: clamp(4.5rem, 8vh, 5.5rem) 1.5rem 1.5rem;
+  }
+  .auth-logo {
+    position: absolute;
+    top: 1.25rem;
+    left: clamp(1rem, 4vw, 2.5rem);
+    font-family: "Space Grotesk", sans-serif;
+    font-size: clamp(1.2rem, 1vw + .9rem, 1.55rem);
+    letter-spacing: .06em;
+    font-weight: 700;
+    color: #0f172a;
+    text-decoration: none;
+  }
+  .auth-split {
+    width: min(1080px, 100%);
+    background: rgba(255, 255, 255, 0.68);
+    border: 1px solid rgba(147, 197, 253, 0.28);
+    border-radius: 24px;
+    box-shadow: 0 18px 45px rgba(30, 64, 175, 0.1);
+    backdrop-filter: blur(2px);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1.08fr 1fr;
+  }
+  .panel-form {
+    background: #fff;
+    padding: clamp(1.3rem, 4vw, 2.4rem);
+    border-right: 1px solid rgba(148, 163, 184, 0.18);
+  }
+  .panel-copy {
+    padding: clamp(1.5rem, 4vw, 2.6rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.55), rgba(219, 234, 254, 0.32));
+  }
+  .copy-content {
+    max-width: 340px;
+  }
+  .copy-content h3 {
+    font-size: clamp(1.45rem, 2.5vw, 1.9rem);
+    margin-bottom: .8rem;
+    color: #0f172a;
+    letter-spacing: .01em;
+  }
+  .copy-content p {
+    margin: 0 0 .8rem;
+    color: #475569;
+    line-height: 1.7;
+  }
+  .auth-title {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  .auth-subtitle {
+    margin: .45rem 0 1.35rem;
+    color: #64748b;
+  }
+  .field-row {
+    margin-bottom: .95rem;
+  }
+  .field-row label {
+    font-size: .9rem;
+    color: #334155;
+    margin-bottom: .42rem;
+    font-weight: 600;
+    display: inline-block;
+  }
+  .field-row input[type="text"],
+  .field-row input[type="password"],
+  .field-row input[type="email"] {
+    width: 100%;
+    height: 46px;
+    border: 1px solid #dbe7f7;
+    border-radius: 12px;
+    padding: 0 .78rem;
+    background: #fff;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  .field-row input:focus {
+    outline: none;
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.25);
+  }
+  .error-box {
+    margin: 0 0 1rem;
+    padding: .6rem .75rem;
+    border-radius: 10px;
+    border: 1px solid #fecaca;
+    background: #fff1f2;
+    color: #be123c;
+    font-size: .85rem;
+    list-style: none;
+  }
+  .field-error {
+    margin-top: .32rem;
+    color: #dc2626;
+    font-size: .8rem;
+  }
+  .btn-auth {
+    width: 100%;
+    height: 46px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #3b82f6, #0ea5e9);
+    color: #fff;
+    font-weight: 700;
+    margin-top: .3rem;
+  }
+  .switch-text {
+    margin-top: .95rem;
+    text-align: center;
+    color: #64748b;
+    font-size: .9rem;
+  }
+  .switch-text a {
+    text-decoration: none;
+    color: #2563eb;
+    font-weight: 600;
+  }
+  @media (max-width: 991px) {
+    .auth-split {
+      grid-template-columns: 1fr;
+    }
+    .panel-form {
+      border-right: 0;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    }
+  }
+</style>
 
- <form action="{% url 'accounts:login' %}" method='post'>
-    {% csrf_token %}
-    {% for field in form %}
-    <div class="mb-3">
-      <label class="form-label">{{ field.label }}</label>
-      {{ field }}
+<section class="auth-shell">
+  <a class="auth-logo" href="{% url 'learning_logs:index' %}">LEARN HUB</a>
+  <div class="auth-split">
+    <div class="panel-form">
+      <h1 class="auth-title">欢迎登录</h1>
+      <p class="auth-subtitle">输入账号信息，继续你的学习旅程。</p>
+
+      {% if form.non_field_errors %}
+        <ul class="error-box">
+          {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% elif form.errors %}
+        <ul class="error-box"><li>用户名或密码错误，请重试。</li></ul>
+      {% endif %}
+
+      <form action="{% url 'accounts:login' %}" method="post" novalidate>
+        {% csrf_token %}
+        {% for field in form %}
+          <div class="field-row">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+              {% for error in field.errors %}
+                <div class="field-error">{{ error }}</div>
+              {% endfor %}
+            {% endif %}
+          </div>
+        {% endfor %}
+
+        {% if next %}
+          <input type="hidden" name="next" value="{{ next }}">
+        {% endif %}
+        <button type="submit" class="btn-auth">登录</button>
+      </form>
+
+      <div class="switch-text">还没有账号？<a href="{% url 'accounts:register' %}">立即注册</a></div>
     </div>
-    {% endfor %}
-    <button class="btn btn-brand" type="submit">登录</button>
- </form>
-</div>
+
+    <div class="panel-copy">
+      <div class="copy-content">
+        <h3>探索学习的边界，<br>看见每一步成长。</h3>
+        <p>清晰记录每一次输入、每一个里程碑，让知识沉淀更自然。</p>
+        <p>在简洁专注的空间里，把今天的努力变成明天的进步。</p>
+      </div>
+    </div>
+  </div>
+</section>
 {% endblock content %}

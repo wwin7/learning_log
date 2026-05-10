@@ -26,7 +26,7 @@
           <button type="submit" class="btn btn-brand btn-sm">一键恢复</button>
         </form>
       </div>
-      <div style="white-space: pre-wrap;">{{ entry.text|truncatechars:200 }}</div>
+      <div>{{ entry.text|truncatechars_html:200|safe }}</div>
     </div>
   </div>
   {% empty %}

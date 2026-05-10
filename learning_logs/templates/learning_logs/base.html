@@ -22,6 +22,9 @@
       --shadow-lg: 0 20px 45px rgba(16, 32, 64, 0.12);
       --shadow-sm: 0 8px 24px rgba(18, 34, 63, 0.08);
       --border-soft: rgba(31, 122, 224, 0.16);
+      --sidebar-width-expanded: 360px;
+      --sidebar-width-collapsed: 64px;
+      --sidebar-width: var(--sidebar-width-expanded);
     }
 
     html[data-theme="dark"] {
@@ -52,6 +55,11 @@
       min-height: 100vh;
     }
 
+    .layout-row {
+      display: flex;
+      min-height: 100vh;
+    }
+
     .sidebar {
       background: linear-gradient(180deg, var(--bg-surface), var(--bg-soft));
       border-right: 1px solid var(--border-soft);
@@ -61,6 +69,41 @@
       top: 0;
       max-height: 100vh;
       overflow-y: auto;
+      width: var(--sidebar-width);
+      flex: 0 0 var(--sidebar-width);
+      transition: width .3s ease, flex-basis .3s ease, padding .3s ease;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      gap: .5rem;
+    }
+
+    .sidebar-toggle-btn {
+      width: 30px;
+      height: 30px;
+      border: 1px solid rgba(31, 122, 224, 0.18);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.75);
+      color: #5f7088;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .3s ease;
+    }
+
+    .sidebar-toggle-btn:hover {
+      color: var(--brand);
+      border-color: rgba(31, 122, 224, 0.35);
+      background: rgba(31, 122, 224, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .sidebar-toggle-btn i {
+      line-height: 1;
     }
 
     .brand-title {
@@ -70,6 +113,14 @@
       font-weight: 700;
       color: var(--text-main);
       text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+    }
+
+    .brand-icon {
+      color: var(--brand);
+      font-size: 1.05rem;
     }
 
     .nav-pills .nav-link {
@@ -98,6 +149,53 @@
     .topbar-card {
       padding: .9rem 1rem;
       margin-bottom: 1rem;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .topbar-back-btn {
+      width: 2.35rem;
+      height: 2.35rem;
+      border: 1px solid rgba(31, 122, 224, 0.2);
+      border-radius: 12px;
+      background: linear-gradient(145deg, rgba(31, 122, 224, 0.14), rgba(25, 182, 160, 0.14));
+      color: var(--brand);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 18px rgba(17, 32, 58, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease, color .2s ease;
+    }
+
+    .topbar-back-btn i {
+      font-size: 1rem;
+      line-height: 1;
+      transform: translateX(-1px);
+    }
+
+    .topbar-back-btn:hover {
+      border-color: rgba(31, 122, 224, 0.42);
+      background: linear-gradient(145deg, rgba(31, 122, 224, 0.22), rgba(25, 182, 160, 0.2));
+      box-shadow: 0 14px 22px rgba(17, 32, 58, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      color: var(--brand);
+      transform: translateY(-1px);
+    }
+
+    .topbar-back-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 6px 14px rgba(17, 32, 58, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .topbar-back-btn:focus-visible {
+      outline: 0;
+      box-shadow:
+        0 0 0 3px rgba(31, 122, 224, 0.2),
+        0 12px 22px rgba(17, 32, 58, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
 
     .panel-card {
@@ -187,6 +285,104 @@
 
     .content-wrap {
       padding: 1.1rem;
+      flex: 1 1 auto;
+      min-width: 0;
+      transition: all .3s ease;
+    }
+
+    .password-fallback-wrap {
+      position: relative;
+    }
+
+    .password-fallback-wrap input {
+      padding-right: .75rem;
+    }
+
+    .password-fallback-wrap.has-value input {
+      padding-right: 2.8rem !important;
+    }
+
+    .password-fallback-toggle {
+      position: absolute;
+      right: .45rem;
+      top: 50%;
+      transform: translateY(-50%) scale(.9);
+      width: 2rem;
+      height: 2rem;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #64748b;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity .16s ease, transform .16s ease, color .2s ease, background .2s ease;
+      z-index: 2;
+    }
+
+    .password-fallback-wrap.has-value .password-fallback-toggle {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translateY(-50%) scale(1);
+    }
+
+    .password-fallback-toggle:hover {
+      color: #0f172a;
+      background: rgba(148, 163, 184, 0.12);
+    }
+
+    .password-fallback-toggle:focus-visible {
+      outline: 2px solid #93c5fd;
+      outline-offset: 1px;
+    }
+
+    .password-fallback-toggle svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    body.sidebar-collapsed {
+      --sidebar-width: var(--sidebar-width-collapsed);
+    }
+
+    body.sidebar-collapsed .sidebar {
+      padding-left: .6rem !important;
+      padding-right: .6rem !important;
+    }
+
+    body.sidebar-collapsed .sidebar-expand-only,
+    body.sidebar-collapsed .nav-label,
+    body.sidebar-collapsed .brand-label {
+      display: none !important;
+    }
+
+    body.sidebar-collapsed .sidebar-header {
+      justify-content: center;
+      margin-bottom: .9rem;
+    }
+
+    body.sidebar-collapsed .brand-title {
+      justify-content: center;
+    }
+
+    body.sidebar-collapsed .sidebar-toggle-btn {
+      margin: 0;
+    }
+
+    body.sidebar-collapsed .nav-pills .nav-link {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: .6rem .45rem;
+    }
+
+    body.sidebar-collapsed .nav-pills .nav-link i {
+      margin-right: 0 !important;
     }
 
     .timer-ring-bg {
@@ -247,12 +443,20 @@
     }
 
     @media (max-width: 991px) {
+      .layout-row {
+        display: block;
+      }
       .sidebar {
         min-height: auto;
         position: static;
+        width: 100%;
+        flex-basis: auto;
       }
       .content-wrap {
         padding: .75rem;
+      }
+      .sidebar-toggle-btn {
+        display: none;
       }
     }
 
@@ -317,14 +521,20 @@
 </head>
 <body>
   <div class="container-fluid layout-shell">
-    <div class="row">
-      <aside class="col-lg-3 col-md-4 sidebar p-3 d-flex flex-column">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <a class="brand-title" href="{% url 'learning_logs:index' %}">LEARN HUB</a>
+    <div class="layout-row">
+      <aside class="sidebar p-3 d-flex flex-column">
+        <div class="sidebar-header">
+          <a class="brand-title" href="{% url 'learning_logs:index' %}">
+            <i class="bi bi-journal-richtext brand-icon"></i>
+            <span class="brand-label">LEARN HUB</span>
+          </a>
+          <button id="sidebarToggle" class="sidebar-toggle-btn" type="button" aria-label="收起侧边栏" title="收起 / 展开侧边栏">
+            <i id="sidebarToggleIcon" class="bi bi-chevron-double-left"></i>
+          </button>
         </div>
 
         {% if user.is_authenticated and current_profile %}
-        <div class="dropdown profile-menu mb-3">
+        <div class="dropdown profile-menu mb-3 sidebar-expand-only">
           <div class="d-flex align-items-center gap-2 profile-trigger">
             <img src="{{ current_profile.avatar_url }}" alt="avatar" class="avatar-img">
             <div>
@@ -351,7 +561,7 @@
         </div>
         {% endif %}
 
-        <form class="global-search mb-3" action="{% url 'learning_logs:global_search' %}" method="get">
+        <form class="global-search mb-3 sidebar-expand-only" action="{% url 'learning_logs:global_search' %}" method="get">
           <div class="input-group">
             <span class="input-group-text border-0 bg-transparent"><i class="bi bi-search"></i></span>
             <input type="text" class="form-control" name="q" value="{{ request.GET.q }}" placeholder="全局搜索笔记/分类...">
@@ -361,33 +571,33 @@
         <ul class="nav nav-pills flex-column">
           <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'learning_logs:dashboard' %}">
-              <i class="bi bi-speedometer2 me-2"></i>仪表盘
+              <i class="bi bi-speedometer2 me-2"></i><span class="nav-label">仪表盘</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'checkin' %}active{% endif %}" href="{% url 'learning_logs:checkin' %}">
-              <i class="bi bi-calendar-check me-2"></i>每日打卡
+              <i class="bi bi-calendar-check me-2"></i><span class="nav-label">每日打卡</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'pomodoro' %}active{% endif %}" href="{% url 'learning_logs:pomodoro' %}">
-              <i class="bi bi-stopwatch me-2"></i>番茄工作法
+              <i class="bi bi-stopwatch me-2"></i><span class="nav-label">番茄工作法</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'topics' or request.resolver_match.url_name == 'topic' %}active{% endif %}" href="{% url 'learning_logs:topics' %}">
-              <i class="bi bi-journal-bookmark me-2"></i>分类笔记
+              <i class="bi bi-journal-bookmark me-2"></i><span class="nav-label">分类笔记</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'new_topic' %}active{% endif %}" href="{% url 'learning_logs:new_topic' %}">
-              <i class="bi bi-plus-square-dotted me-2"></i>新建分类
+              <i class="bi bi-plus-square-dotted me-2"></i><span class="nav-label">新建分类</span>
             </a>
           </li>
         </ul>
 
         {% if request.resolver_match.url_name != 'pomodoro' %}
-        <div id="pomodoroSidebar" class="pomodoro-compact panel-card p-3 mt-3 mb-3 d-none">
+        <div id="pomodoroSidebar" class="pomodoro-compact panel-card p-3 mt-3 mb-3 d-none sidebar-expand-only">
           <div class="d-flex align-items-center justify-content-between mb-2">
             <div class="small text-secondary text-uppercase">番茄计时</div>
             <span id="pomodoroSidebarPhase" class="badge rounded-pill text-bg-light border">工作</span>
@@ -412,17 +622,24 @@
         {% endif %}
 
         {% if user.is_authenticated and current_profile and current_profile.signature %}
-        <div class="panel-card mt-auto p-3">
+        <div class="panel-card mt-auto p-3 sidebar-expand-only">
           <div class="small" style="white-space: pre-wrap;"><span class="me-1">🌸</span>{{ current_profile.signature }}</div>
         </div>
         {% endif %}
       </aside>
 
-      <main class="col-lg-9 col-md-8 content-wrap">
+      <main class="content-wrap">
         <div class="topbar-card d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div class="fw-semibold">{% block page_header %}学习日志管理{% endblock page_header %}</div>
-          <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-outline-secondary btn-sm" type="button" title="返回上一级" onclick="window.history.back();">
+          <div class="topbar-actions">
+            <button
+              id="topbarBackButton"
+              class="topbar-back-btn"
+              type="button"
+              title="{% block back_button_title %}返回上一页{% endblock back_button_title %}"
+              aria-label="{% block back_button_aria %}返回上一页{% endblock back_button_aria %}"
+              data-fallback-url="{% block back_fallback_url %}{% url 'learning_logs:dashboard' %}{% endblock back_fallback_url %}"
+            >
               <i class="bi bi-arrow-left"></i>
             </button>
           </div>
@@ -452,6 +669,103 @@
       const themeToggleMenu = document.getElementById('themeToggleMenu');
       const themeToggleIcon = document.getElementById('themeToggleIcon');
       const themeToggleText = document.getElementById('themeToggleText');
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
+      const sidebarStorageKey = 'll_sidebar_collapsed';
+      const topbarBackButton = document.getElementById('topbarBackButton');
+
+      let sidebarCollapsed = localStorage.getItem(sidebarStorageKey) === '1';
+
+      function navigateBackWithFallback(trigger) {
+        const fallbackUrl = (trigger && trigger.dataset && trigger.dataset.fallbackUrl) || "{% url 'learning_logs:dashboard' %}";
+        const currentUrl = new URL(window.location.href);
+        const referrer = document.referrer;
+        const backScopePrefixes = [
+          '/dashboard/',
+          '/checkin/',
+          '/pomodoro/',
+          '/topics/',
+          '/new_topic/',
+          '/edit_topic/',
+          '/new_entry/',
+          '/edit_entry/',
+          '/delete_entry/',
+          '/delete_topic/',
+          '/toggle_pin/',
+          '/recycle-bin/',
+          '/restore_entry/',
+          '/search/',
+          '/export/',
+          '/accounts/settings/',
+        ];
+        const authBoundaryPrefixes = [
+          '/accounts/login/',
+          '/accounts/register/',
+          '/accounts/logout/',
+          '/accounts/password_change/',
+          '/accounts/password_change/done/',
+          '/accounts/password_reset/',
+          '/accounts/password_reset/done/',
+        ];
+
+        function normalizePath(pathname) {
+          if (!pathname) return '/';
+          const withSlash = pathname.startsWith('/') ? pathname : `/${pathname}`;
+          return withSlash.endsWith('/') ? withSlash : `${withSlash}/`;
+        }
+
+        function isAuthBoundary(pathname) {
+          const normalized = normalizePath(pathname);
+          if (authBoundaryPrefixes.some(prefix => normalized.startsWith(prefix))) {
+            return true;
+          }
+          return normalized.startsWith('/accounts/reset/');
+        }
+
+        function isInBackScope(pathname) {
+          const normalized = normalizePath(pathname);
+          return backScopePrefixes.some(prefix => normalized.startsWith(prefix)) && !isAuthBoundary(normalized);
+        }
+
+        let canGoReferrer = false;
+
+        if (referrer) {
+          try {
+            const referrerUrl = new URL(referrer);
+            const isSameOrigin = referrerUrl.origin === currentUrl.origin;
+            const isDifferentRoute =
+              (referrerUrl.pathname + referrerUrl.search) !== (currentUrl.pathname + currentUrl.search);
+            canGoReferrer = isSameOrigin && isDifferentRoute && isInBackScope(referrerUrl.pathname);
+          } catch (e) {
+            canGoReferrer = false;
+          }
+        }
+
+        if (canGoReferrer && window.history.length > 1) {
+          window.history.back();
+          return;
+        }
+
+        if (canGoReferrer) {
+          window.location.href = referrer;
+          return;
+        }
+
+        window.location.href = fallbackUrl;
+      }
+
+      function canCollapseSidebar() {
+        return window.matchMedia('(min-width: 992px)').matches;
+      }
+
+      function applySidebarState() {
+        const shouldCollapse = canCollapseSidebar() && sidebarCollapsed;
+        document.body.classList.toggle('sidebar-collapsed', shouldCollapse);
+        if (!sidebarToggle || !sidebarToggleIcon) return;
+        sidebarToggle.setAttribute('aria-label', shouldCollapse ? '展开侧边栏' : '收起侧边栏');
+        sidebarToggle.title = shouldCollapse ? '展开侧边栏' : '收起侧边栏';
+        sidebarToggleIcon.className = shouldCollapse ? 'bi bi-chevron-double-right' : 'bi bi-chevron-double-left';
+      }
 
       function updateThemeButton() {
         if (!themeToggleIcon || !themeToggleText) return;
@@ -464,6 +778,7 @@
       if (current) {
         root.setAttribute('data-theme', current);
       }
+      applySidebarState();
       updateThemeButton();
 
       if (themeToggleMenu) {
@@ -475,6 +790,23 @@
         });
       }
 
+      if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+          if (!canCollapseSidebar()) return;
+          sidebarCollapsed = !sidebarCollapsed;
+          localStorage.setItem(sidebarStorageKey, sidebarCollapsed ? '1' : '0');
+          applySidebarState();
+        });
+      }
+
+      if (topbarBackButton) {
+        topbarBackButton.addEventListener('click', function() {
+          navigateBackWithFallback(topbarBackButton);
+        });
+      }
+
+      window.addEventListener('resize', applySidebarState);
+
       document.querySelectorAll('input, textarea, select').forEach(function(el) {
         if (el.type === 'checkbox' || el.type === 'radio' || el.type === 'submit' || el.type === 'button') {
           return;
@@ -485,6 +817,67 @@
         }
         el.classList.add('form-control');
       });
+
+      (function() {
+        const userAgent = navigator.userAgent || '';
+        const isNativeRevealBrowser = /\bEdg(?:A|iOS)?\//.test(userAgent);
+        if (isNativeRevealBrowser) {
+          return;
+        }
+
+        const eye = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12c2.25-4 5.58-6 10-6s7.75 2 10 6c-2.25 4-5.58 6-10 6s-7.75-2-10-6Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>';
+        const eyeOff = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 3l18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9.9 5.42A11.86 11.86 0 0 1 12 5.25c4.43 0 7.76 2 10 6a14.64 14.64 0 0 1-3.11 3.86M6.53 8.05A14.04 14.04 0 0 0 2 11.25c2.24 4 5.57 6 10 6 1.15 0 2.22-.13 3.2-.4M10.6 10.6a2 2 0 0 0 2.8 2.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+        document.querySelectorAll('input[type="password"]').forEach(function(input) {
+          if (input.closest('.password-fallback-wrap')) {
+            return;
+          }
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'password-fallback-wrap';
+          input.parentNode.insertBefore(wrapper, input);
+          wrapper.appendChild(input);
+
+          const toggle = document.createElement('button');
+          toggle.type = 'button';
+          toggle.className = 'password-fallback-toggle';
+          toggle.setAttribute('aria-label', '显示密码');
+          toggle.setAttribute('aria-pressed', 'false');
+          toggle.innerHTML = eye;
+          wrapper.appendChild(toggle);
+
+          function setHidden() {
+            input.type = 'password';
+            toggle.setAttribute('aria-label', '显示密码');
+            toggle.setAttribute('aria-pressed', 'false');
+            toggle.innerHTML = eye;
+          }
+
+          function syncState() {
+            const hasValue = input.value.length > 0;
+            wrapper.classList.toggle('has-value', hasValue);
+            if (!hasValue) {
+              setHidden();
+            }
+          }
+
+          setHidden();
+          syncState();
+          input.addEventListener('input', syncState);
+          input.addEventListener('change', syncState);
+
+          toggle.addEventListener('click', function() {
+            if (input.value.length === 0) {
+              return;
+            }
+            const isVisible = input.type === 'text';
+            input.type = isVisible ? 'password' : 'text';
+            toggle.setAttribute('aria-pressed', String(!isVisible));
+            toggle.setAttribute('aria-label', isVisible ? '显示密码' : '隐藏密码');
+            toggle.innerHTML = isVisible ? eye : eyeOff;
+          });
+        });
+      })();
 
       // 初始化全局的 Tagify 输入框
       document.querySelectorAll('input[name="tags"], textarea[name="tags"]').forEach(function(el) {

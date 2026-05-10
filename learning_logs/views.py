@@ -1,10 +1,17 @@
 import json
+import os
 import re
 from collections import Counter
 from datetime import timedelta
+from uuid import uuid4
+
+from django.conf import settings
+from django.http import HttpResponse
+from django.utils.text import slugify
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.files.storage import default_storage
 from django.db.models import Count, Max, Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -59,6 +66,122 @@ def _highlight_text(text, keyword):
   pattern = re.compile(re.escape(keyword), re.IGNORECASE)
   highlighted = pattern.sub(lambda m: f"<mark>{m.group(0)}</mark>", escaped_text)
   return mark_safe(highlighted)
+
+
+def _sanitize_export_html(raw_html):
+  """清理富文本中的潜在危险内容，供导出渲染使用。"""
+  html = raw_html or ""
+  html = html.replace("\u21b5", "")  # remove visible soft-return symbol in some exports
+  html = re.sub(r"<script[\s\S]*?>[\s\S]*?</script>", "", html, flags=re.IGNORECASE)
+  html = re.sub(r"<style[\s\S]*?>[\s\S]*?</style>", "", html, flags=re.IGNORECASE)
+  html = re.sub(r"\son\w+\s*=\s*(['\"]).*?\1", "", html, flags=re.IGNORECASE)
+  html = re.sub(r"\son\w+\s*=\s*[^\s>]+", "", html, flags=re.IGNORECASE)
+  html = re.sub(r'(href|src)\s*=\s*([\'"])\s*javascript:[\s\S]*?\2', r'\1=\2#\2', html, flags=re.IGNORECASE)
+  return html
+
+
+def _build_export_html(title, date_str, body_html):
+  return (
+    "<!doctype html><html><head>"
+    "<meta charset='utf-8'>"
+    "<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />"
+    "<style>"
+    "body{font-family:'Microsoft YaHei','PingFang SC','Noto Sans CJK SC','SimSun',sans-serif;padding:24px;line-height:1.75;color:#111;font-size:14px;word-break:break-word;}"
+    "h1{font-size:28px;margin:0 0 10px 0;font-weight:700;}"
+    ".meta{font-size:12px;color:#666;margin:0 0 18px 0;}"
+    ".content p{margin:10px 0;}"
+    ".content img{max-width:100%;height:auto;display:block;margin:8px 0;}"
+    ".content blockquote{border-left:4px solid #d0d7de;padding-left:10px;color:#555;margin:12px 0;}"
+    ".content pre,.content code{font-family:Consolas,'Courier New',monospace;}"
+    ".content pre{background:#f6f8fa;padding:10px;border-radius:6px;overflow:auto;}"
+    ".content table{border-collapse:collapse;max-width:100%;margin:10px 0;}"
+    ".content th,.content td{border:1px solid #d0d7de;padding:6px 8px;vertical-align:top;}"
+    ".content video{max-width:100%;height:auto;display:block;margin:8px 0;}"
+    ".content a{color:#0969da;text-decoration:underline;}"
+    "</style></head><body>"
+    f"<h1>{escape(title)}</h1>"
+    f"<p class='meta'>最后编辑：{escape(date_str)}</p>"
+    f"<div class='content'>{body_html}</div>"
+    "</body></html>"
+  )
+
+
+def _rewrite_media_urls_for_export(body_html, request):
+  """将 /media/... 资源改为绝对 URL，避免导出渲染丢图。"""
+  media_url = (settings.MEDIA_URL or "/media/").rstrip("/")
+  origin = request.build_absolute_uri("/").rstrip("/")
+
+  pattern = re.compile(
+    r'(?P<attr>src|poster)\s*=\s*(?P<q>[\'"])(?P<url>[^\'"]+)(?P=q)',
+    flags=re.IGNORECASE,
+  )
+
+  def repl(match):
+    attr = match.group("attr")
+    q = match.group("q")
+    raw_url = match.group("url").strip()
+
+    if raw_url.startswith(("http://", "https://", "data:", "blob:", "file://")):
+      return match.group(0)
+
+    candidate = raw_url
+    if raw_url.startswith(origin + "/"):
+      candidate = raw_url[len(origin):]
+
+    if not candidate.startswith(media_url + "/"):
+      return match.group(0)
+
+    absolute_url = request.build_absolute_uri(candidate)
+    return f'{attr}={q}{absolute_url}{q}'
+
+  return pattern.sub(repl, body_html)
+
+
+def _export_dependency_error(message):
+  return HttpResponse(
+    "富文本导出失败：当前环境缺少渲染能力或依赖未安装完整。\n"
+    f"详情：{message}\n"
+    "请安装 playwright 并执行 `python -m playwright install chromium`，然后重启服务。",
+    status=500,
+    content_type="text/plain; charset=utf-8",
+  )
+
+
+def _render_html_pdf(html):
+  from playwright.sync_api import sync_playwright
+
+  with sync_playwright() as playwright:
+    browser = playwright.chromium.launch()
+    page = browser.new_page(viewport={"width": 1400, "height": 2200, "device_scale_factor": 2})
+    page.set_content(html, wait_until="networkidle")
+    page.emulate_media(media="screen")
+    pdf_bytes = page.pdf(
+      format="A4",
+      print_background=True,
+      prefer_css_page_size=True,
+      margin={"top": "14mm", "right": "14mm", "bottom": "14mm", "left": "14mm"},
+    )
+    browser.close()
+    return pdf_bytes
+
+
+def _render_html_image(html, fmt):
+  from playwright.sync_api import sync_playwright
+
+  image_type = "jpeg" if fmt in ("jpg", "jpeg") else "png"
+  ext = "jpg" if image_type == "jpeg" else "png"
+  content_type = "image/jpeg" if image_type == "jpeg" else "image/png"
+
+  with sync_playwright() as playwright:
+    browser = playwright.chromium.launch()
+    page = browser.new_page(viewport={"width": 1400, "height": 2200, "device_scale_factor": 2})
+    page.set_content(html, wait_until="networkidle")
+    screenshot_args = {"full_page": True, "type": image_type}
+    if image_type == "jpeg":
+      screenshot_args["quality"] = 92
+    image_bytes = page.screenshot(**screenshot_args)
+    browser.close()
+    return image_bytes, content_type, ext
 
 
 @login_required
@@ -397,6 +520,79 @@ def _extract_tag_counts(tag_texts):
 
 
 @login_required
+def export_entry(request, entry_id, fmt):
+  """导出单条笔记为 doc/pdf/jpg/png，富文本优先。"""
+  entry = get_object_or_404(Entry, id=entry_id)
+  if entry.topic.owner != request.user:
+    raise Http404
+
+  title = entry.topic.text or "笔记"
+  body_html = _rewrite_media_urls_for_export(_sanitize_export_html(entry.text or ""), request)
+  latest_dt = timezone.localtime(entry.updated_at or entry.date_added)
+  date_str = latest_dt.strftime("%Y-%m-%d %H:%M")
+  html_doc = _build_export_html(title, date_str, body_html)
+
+  fmt = (fmt or "").lower()
+  if fmt in ("doc", "word"):
+    response = HttpResponse(html_doc, content_type="application/msword; charset=utf-8")
+    filename = f"{slugify(title) or 'entry'}.doc"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
+
+  if fmt == "pdf":
+    try:
+      pdf_bytes = _render_html_pdf(html_doc)
+      response = HttpResponse(pdf_bytes, content_type="application/pdf")
+      filename = f"{slugify(title) or 'entry'}.pdf"
+      response["Content-Disposition"] = f'attachment; filename="{filename}"'
+      return response
+    except Exception as exc:
+      return _export_dependency_error(str(exc))
+
+  if fmt in ("jpg", "jpeg", "png"):
+    try:
+      image_bytes, content_type, ext = _render_html_image(html_doc, fmt)
+    except Exception as exc:
+      return _export_dependency_error(str(exc))
+
+    response = HttpResponse(image_bytes, content_type=content_type)
+    filename = f"{slugify(title) or 'entry'}.{ext}"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
+
+  raise Http404
+
+
+@login_required
+@require_POST
+def api_upload_entry_media(request):
+  media_file = request.FILES.get("file")
+  media_type = (request.POST.get("type") or "image").lower()
+  if media_type not in ("image", "video"):
+    media_type = "image"
+
+  if not media_file:
+    return JsonResponse({"error": "未接收到上传文件。"}, status=400)
+
+  ext = os.path.splitext(media_file.name or "")[1].lower()
+  allowed = {
+    "image": {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"},
+    "video": {".mp4", ".webm", ".ogg", ".mov"},
+  }
+  size_limit = 12 * 1024 * 1024 if media_type == "image" else 120 * 1024 * 1024
+
+  if ext not in allowed[media_type]:
+    return JsonResponse({"error": "文件类型不支持。"}, status=400)
+  if media_file.size > size_limit:
+    return JsonResponse({"error": "文件过大，请压缩后重试。"}, status=400)
+
+  now = timezone.localtime()
+  folder = f"entry_uploads/{media_type}/{now.strftime('%Y/%m')}"
+  filename = f"{uuid4().hex}{ext}"
+  saved_path = default_storage.save(f"{folder}/{filename}", media_file)
+  file_url = default_storage.url(saved_path)
+  return JsonResponse({"url": file_url})
+
 def api_note_stats(request):
   user_topics = Topic.objects.filter(owner=request.user)
   user_entries = _active_entries(request.user)

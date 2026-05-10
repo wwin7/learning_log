@@ -1,0 +1,124 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@wangeditor/editor@latest/dist/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@wangeditor/editor@latest/dist/index.min.js"></script>
+<script>
+  (function() {
+    const textarea = document.getElementById('real_entry_text');
+    const editorShell = document.getElementById('entry-editor-shell');
+    const toolbarEl = document.getElementById('toolbar-container');
+    const editorEl = document.getElementById('editor-container');
+
+    if (!textarea || !editorShell || !toolbarEl || !editorEl || !window.wangEditor) {
+      return;
+    }
+
+    const E = window.wangEditor;
+    const createEditor = E.createEditor;
+    const createToolbar = E.createToolbar;
+    const uploadUrl = "{% url 'learning_logs:api_upload_entry_media' %}";
+
+    function getCookie(name) {
+      const cookies = document.cookie ? document.cookie.split('; ') : [];
+      for (let i = 0; i < cookies.length; i += 1) {
+        const parts = cookies[i].split('=');
+        const key = decodeURIComponent(parts.shift() || '');
+        if (key === name) {
+          return decodeURIComponent(parts.join('='));
+        }
+      }
+      return '';
+    }
+
+    async function uploadEntryMedia(file, mediaType) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', mediaType);
+
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: formData
+      });
+      if (!response.ok) {
+        let message = '上传失败，请稍后重试。';
+        try {
+          const data = await response.json();
+          if (data && data.error) {
+            message = data.error;
+          }
+        } catch (error) {
+          // noop
+        }
+        throw new Error(message);
+      }
+      const data = await response.json();
+      if (!data || !data.url) {
+        throw new Error('上传响应无效。');
+      }
+      return data.url;
+    }
+
+    const editorConfig = {
+      placeholder: '记录今天学到了什么...',
+      onChange(editor) {
+        textarea.value = editor.getHtml();
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      },
+      MENU_CONF: {
+        uploadImage: {
+          allowedFileTypes: ['image/*'],
+          async customUpload(file, insertFn) {
+            try {
+              const url = await uploadEntryMedia(file, 'image');
+              insertFn(url, file.name, url);
+            } catch (error) {
+              alert(error.message || '图片上传失败。');
+            }
+          }
+        },
+        uploadVideo: {
+          allowedFileTypes: ['video/*'],
+          async customUpload(file, insertFn) {
+            try {
+              const url = await uploadEntryMedia(file, 'video');
+              insertFn(url);
+            } catch (error) {
+              alert(error.message || '视频上传失败。');
+            }
+          }
+        }
+      }
+    };
+
+    const editor = createEditor({
+      selector: '#editor-container',
+      html: textarea.value || '',
+      config: editorConfig,
+      mode: 'default'
+    });
+
+    createToolbar({
+      editor: editor,
+      selector: '#toolbar-container',
+      mode: 'default'
+    });
+
+    textarea.value = editor.getHtml();
+
+    function syncFullscreenState() {
+      const isFullscreen = editorShell.classList.contains('w-e-full-screen-container');
+      document.body.classList.toggle('entry-editor-fullscreen-active', isFullscreen);
+    }
+
+    const observer = new MutationObserver(syncFullscreenState);
+    observer.observe(editorShell, { attributes: true, attributeFilter: ['class'] });
+    syncFullscreenState();
+
+    window.addEventListener('beforeunload', function() {
+      observer.disconnect();
+      document.body.classList.remove('entry-editor-fullscreen-active');
+    });
+  })();
+</script>

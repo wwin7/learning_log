@@ -3,6 +3,7 @@
 {% block title %}{{ page_title }}{% endblock title %}
 
 {% block page_header %}{{ page_title }}{% endblock page_header %}
+{% block back_fallback_url %}{% url 'learning_logs:topics' %}{% endblock back_fallback_url %}
 
 {% block content %}
 <div class="panel-card">

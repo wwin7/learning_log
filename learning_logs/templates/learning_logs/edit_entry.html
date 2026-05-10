@@ -3,28 +3,37 @@
 {% block title %}{{ page_title }}{% endblock title %}
 
 {% block page_header %}{{ page_title }}{% endblock page_header %}
+{% block back_fallback_url %}{% url 'learning_logs:topic' topic.id %}{% endblock back_fallback_url %}
 
 {% block content %}
 <div class="panel-card">
-	<div class="mb-3 small">
+	<div class="mb-3 small entry-meta">
 		所属分类：<a href="{% url 'learning_logs:topic' topic.id %}">{{ topic.text }}</a>
 	</div>
 
 	<form action="{% url form_action entry.id %}" method="post">
 		{% csrf_token %}
 		{% for field in form %}
-		<div class="mb-3">
+		<div class="mb-3 {% if field.name == 'text' %}entry-field-text{% else %}entry-field-extra{% endif %}">
 			<label class="form-label">{{ field.label }}</label>
 			{{ field }}
+			{% if field.name == "text" %}
+			{% include "learning_logs/entry_editor.html" %}
+			{% endif %}
 			{% if field.errors %}
 			<div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
 			{% endif %}
 		</div>
 		{% endfor %}
-		<div class="d-flex gap-2">
+		<div class="d-flex gap-2 entry-form-actions">
 			<button type="submit" class="btn btn-brand">保存修改</button>
 			<a href="{% url 'learning_logs:topic' topic.id %}" class="btn btn-outline-secondary">返回详情</a>
+
 		</div>
 	</form>
 </div>
 {% endblock content %}
+
+{% block extra_js %}
+{% include "learning_logs/entry_editor_js.html" %}
+{% endblock extra_js %}

@@ -3,12 +3,13 @@
 {% block title %}{{ topic.text }}{% endblock title %}
 
 {% block page_header %}分类详情：{{ topic.text }}{% endblock page_header %}
+{% block back_fallback_url %}{% url 'learning_logs:topics' %}{% endblock back_fallback_url %}
 
 {% block content %}
 <div class="panel-card mb-3">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
-            <span class="badge" style="background-color: {{ topic.category_color }}">分类色块</span>
+            <span class="badge" data-bg="{{ topic.category_color }}">分类色块</span>
             {% if topic.tags %}
             <span class="tag-chip ms-2">{{ topic.tags }}</span>
             {% endif %}
@@ -53,6 +54,17 @@
                         {% csrf_token %}
                         <button type="submit" class="btn btn-outline-warning btn-sm">{% if entry.is_pinned %}取消置顶{% else %}置顶{% endif %}</button>
                     </form>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-info btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="导出">
+                            <i class="bi bi-download"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'learning_logs:export_entry' entry.id 'pdf' %}">PDF</a></li>
+                            <li><a class="dropdown-item" href="{% url 'learning_logs:export_entry' entry.id 'doc' %}">Word (.doc)</a></li>
+                            <li><a class="dropdown-item" href="{% url 'learning_logs:export_entry' entry.id 'jpg' %}">JPG</a></li>
+                            <li><a class="dropdown-item" href="{% url 'learning_logs:export_entry' entry.id 'png' %}">PNG</a></li>
+                        </ul>
+                    </div>
                     <a class="btn btn-outline-secondary btn-sm" href="{% url 'learning_logs:edit_entry' entry.id %}">编辑</a>
                     <form method="post" action="{% url 'learning_logs:delete_entry' entry.id %}" onsubmit="return confirm('确认删除这条笔记吗？');">
                         {% csrf_token %}
@@ -60,11 +72,11 @@
                     </form>
                 </div>
             </div>
-            <div class="mb-2" style="white-space: pre-wrap;">
+            <div class="mb-2">
                 {% if keyword %}
                 {{ entry.highlighted_text|safe }}
                 {% else %}
-                {{ entry.text }}
+                {{ entry.text|safe }}
                 {% endif %}
             </div>
             {% if entry.tags %}
@@ -80,3 +92,14 @@
 </div>
 
 {% endblock content %}
+
+{% block extra_js %}
+<script>
+    // apply background colors defined via data-bg to avoid inline template CSS
+    $(function() {
+        $('.badge[data-bg]').each(function() {
+            $(this).css('background-color', $(this).data('bg'));
+        });
+    });
+</script>
+{% endblock extra_js %}

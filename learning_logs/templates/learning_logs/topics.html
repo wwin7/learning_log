@@ -16,7 +16,7 @@
         <div class="panel-card h-100">
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <a class="fw-semibold text-decoration-none" href="{% url 'learning_logs:topic' topic.id %}">{{ topic.text }}</a>
-                <span class="badge" style="background-color: {{ topic.category_color }}">{{ topic.entry_total }} 篇</span>
+                <span class="badge" data-bg="{{ topic.category_color }}">{{ topic.entry_total }} 篇</span>
             </div>
             <div class="mb-2">
                 {% if topic.tags %}
@@ -51,6 +51,10 @@
     }
 
     $(function() {
+        // apply background colors from data-bg attributes
+        $('.badge[data-bg]').each(function() {
+            $(this).css('background-color', $(this).data('bg'));
+        });
         $('#topicSortable').sortable({
             items: '.topic-sort-item',
             opacity: 0.9,

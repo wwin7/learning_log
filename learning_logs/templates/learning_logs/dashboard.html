@@ -3,6 +3,7 @@
 {% block title %}数据仪表盘{% endblock title %}
 
 {% block page_header %}学习数据仪表盘{% endblock page_header %}
+{% block back_fallback_url %}{% url 'learning_logs:topics' %}{% endblock back_fallback_url %}
 
 {% block content %}
 <div class="row g-3 mb-3">
@@ -40,7 +41,7 @@
         <div class="fw-bold">{{ weekly_progress }}%</div>
       </div>
       <div class="progress" style="height: 10px;">
-        <div class="progress-bar" style="width: {{ weekly_progress }}%; background: linear-gradient(90deg, #1f7ae0, #19b6a0);"></div>
+        <div class="progress-bar" data-progress="{{ weekly_progress }}" style="background: linear-gradient(90deg, #1f7ae0, #19b6a0);"></div>
       </div>
     </div>
   </div>
@@ -60,7 +61,15 @@
     <div class="panel-card h-100">
       <h6>连续打卡</h6>
       <div class="display-5 fw-bold mb-2">{{ streak }} 天</div>
-      <div class="mb-3"><span class="tag-chip">{{ badge }}</span></div>
+      <div class="mb-3">
+        <span class="tag-chip">
+          {% if streak|default:0 >= 1 %}
+            你已经坚持了{{ streak }}天，继续保持呦
+          {% else %}
+            别让今天留白，记录你的第一步吧
+          {% endif %}
+        </span>
+      </div>
       {% if today_checked %}
       <div class="alert alert-success mb-0">{{ checkin_status_text }}</div>
       {% else %}
@@ -102,6 +111,11 @@
 <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2/dist/echarts-wordcloud.min.js"></script>
 <script>
   $(function() {
+    // set progress-bar widths from data-progress attributes to avoid editor CSS parser errors
+    $('.progress-bar[data-progress]').each(function() {
+      $(this).css('width', $(this).data('progress') + '%');
+    });
+
     $.getJSON("{% url 'learning_logs:api_checkin_stats' %}", function(data) {
       const checkinChart = echarts.init(document.getElementById('checkinLineChart'));
       checkinChart.setOption({
@@ -218,6 +232,17 @@
       });
 
       const heatmapChart = echarts.init(document.getElementById('heatmapChart'));
+      const heatmapValueMap = new Map(
+        (data.heatmap_data || []).map(function(item) {
+          return [item[0] + '-' + item[1], item[2]];
+        })
+      );
+      const fullHeatmapData = [];
+      for (let weekday = 0; weekday < data.heatmap_weekdays.length; weekday += 1) {
+        for (let hour = 0; hour < data.heatmap_hours.length; hour += 1) {
+          fullHeatmapData.push([hour, weekday, heatmapValueMap.get(hour + '-' + weekday) || 0]);
+        }
+      }
       heatmapChart.setOption({
         tooltip: {
           position: 'top',
@@ -226,20 +251,27 @@
             return data.heatmap_weekdays[val[1]] + ' ' + data.heatmap_hours[val[0]] + '<br/>记录: ' + val[2];
           }
         },
-        grid: { top: '12%', height: '68%' },
-        xAxis: { type: 'category', data: data.heatmap_hours, splitArea: { show: true } },
-        yAxis: { type: 'category', data: data.heatmap_weekdays, splitArea: { show: true } },
+        grid: { top: '12%', right: '2%', height: '68%' },
+        xAxis: { type: 'category', data: data.heatmap_hours, splitArea: { show: false } },
+        yAxis: { type: 'category', data: data.heatmap_weekdays, splitArea: { show: false } },
         visualMap: {
           min: 0,
-          max: data.heatmap_max,
+          max: Math.max(data.heatmap_max || 0, 1),
           calculable: true,
           orient: 'horizontal',
           left: 'center',
-          bottom: '2%'
+          bottom: '2%',
+          inRange: {
+            color: ['#d8deea', '#d7a07b', '#c4434b']
+          }
         },
         series: [{
           type: 'heatmap',
-          data: data.heatmap_data,
+          data: fullHeatmapData,
+          itemStyle: {
+            borderWidth: 1,
+            borderColor: 'rgba(120,130,150,0.22)'
+          },
           emphasis: { itemStyle: { shadowBlur: 8, shadowColor: 'rgba(0,0,0,0.35)' } }
         }]
       });

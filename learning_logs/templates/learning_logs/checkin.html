@@ -5,6 +5,37 @@
 {% block page_header %}每日打卡中心{% endblock page_header %}
 
 {% block content %}
+<style>
+  .checkin-timeline-scroll {
+    max-height: 460px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    padding-right: 4px;
+    transition: box-shadow .2s ease;
+  }
+
+  .checkin-timeline-scroll.is-scrolling {
+    box-shadow: inset 0 -6px 12px -12px rgba(31, 122, 224, .45);
+  }
+
+  .checkin-timeline-scroll::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .checkin-timeline-scroll {
+    scrollbar-width: none;
+  }
+
+  @media (max-width: 991px) {
+    .checkin-timeline-scroll {
+      max-height: 52vh;
+    }
+  }
+</style>
 <div class="row g-3">
   <div class="col-lg-5">
     <div class="panel-card">
@@ -24,7 +55,13 @@
       </form>
       <div class="mt-3">
         <span class="tag-chip">连续 {{ streak }} 天</span>
-        <span class="tag-chip">{{ badge }}</span>
+        <span class="tag-chip">
+          {% if streak|default:0 >= 1 %}
+            你已经坚持了{{ streak }}天，继续保持呦
+          {% else %}
+            别让今天留白，记录你的第一步吧
+          {% endif %}
+        </span>
       </div>
     </div>
   </div>
@@ -32,18 +69,20 @@
   <div class="col-lg-7">
     <div class="panel-card h-100">
       <h5 class="mb-3">最近打卡轨迹 ⛳</h5>
-      <div class="timeline">
-        {% for item in checkins %}
-        <div class="timeline-item">
-          <div class="timeline-date">{{ item.checkin_date|date:'Y年m月d日' }}</div>
-          <div class="timeline-content">{{ item.note|default:'没有留下备注，但留下了汗水。' }}</div>
+      <div class="checkin-timeline-scroll js-checkin-timeline-scroll">
+        <div class="timeline">
+          {% for item in checkins %}
+          <div class="timeline-item">
+            <div class="timeline-date">{{ item.checkin_date|date:'Y年m月d日' }}</div>
+            <div class="timeline-content">{{ item.note|default:'没有留下备注，但留下了汗水。' }}</div>
+          </div>
+          {% empty %}
+          <div class="text-center text-secondary py-4">
+            <i class="bi bi-calendar-x fs-1 text-muted d-block mb-3"></i>
+            暂无打卡记录，今天开始你的第一次坚持吧！
+          </div>
+          {% endfor %}
         </div>
-        {% empty %}
-        <div class="text-center text-secondary py-4">
-          <i class="bi bi-calendar-x fs-1 text-muted d-block mb-3"></i>
-          暂无打卡记录，今天开始你的第一次坚持吧！
-        </div>
-        {% endfor %}
       </div>
     </div>
   </div>
@@ -73,6 +112,61 @@
         {% endif %}
       {% endfor %}
     {% endif %}
+
+    const timelineScroll = document.querySelector('.js-checkin-timeline-scroll');
+    if (!timelineScroll) {
+      return;
+    }
+
+    let removeScrollingStateTimer = null;
+    const markScrolling = () => {
+      timelineScroll.classList.add('is-scrolling');
+      clearTimeout(removeScrollingStateTimer);
+      removeScrollingStateTimer = setTimeout(() => {
+        timelineScroll.classList.remove('is-scrolling');
+      }, 180);
+    };
+
+    timelineScroll.addEventListener('scroll', markScrolling, { passive: true });
+    timelineScroll.addEventListener('wheel', function(event) {
+      event.preventDefault();
+      timelineScroll.scrollBy({
+        top: event.deltaY || event.deltaX,
+        behavior: 'smooth'
+      });
+      markScrolling();
+    }, { passive: false });
+
+    let isDragging = false;
+    let startY = 0;
+    let startTop = 0;
+    timelineScroll.addEventListener('mousedown', function(event) {
+      if (event.button !== 0 || timelineScroll.scrollHeight <= timelineScroll.clientHeight) {
+        return;
+      }
+      isDragging = true;
+      startY = event.clientY;
+      startTop = timelineScroll.scrollTop;
+      timelineScroll.style.cursor = 'grabbing';
+      timelineScroll.style.userSelect = 'none';
+    });
+
+    window.addEventListener('mousemove', function(event) {
+      if (!isDragging) {
+        return;
+      }
+      timelineScroll.scrollTop = startTop - (event.clientY - startY);
+      markScrolling();
+    });
+
+    window.addEventListener('mouseup', function() {
+      if (!isDragging) {
+        return;
+      }
+      isDragging = false;
+      timelineScroll.style.cursor = '';
+      timelineScroll.style.userSelect = '';
+    });
   });
 </script>
 {% endblock extra_js %}

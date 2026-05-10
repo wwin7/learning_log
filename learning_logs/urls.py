@@ -25,8 +25,10 @@ urlpatterns = [
     path('recycle-bin/', views.recycle_bin, name='recycle_bin'),
     path('restore_entry/<int:entry_id>/', views.restore_entry, name='restore_entry'),
     path('search/', views.global_search, name='global_search'),
+    path('export/<int:entry_id>/<str:fmt>/', views.export_entry, name='export_entry'),
 
     path('api/checkin-stats/', views.api_checkin_stats, name='api_checkin_stats'),
     path('api/note-stats/', views.api_note_stats, name='api_note_stats'),
     path('api/reorder-topics/', views.api_reorder_topics, name='api_reorder_topics'),
+    path('api/upload-entry-media/', views.api_upload_entry_media, name='api_upload_entry_media'),
 ]
