@@ -4,4 +4,3 @@ Pillow==11.2.1
 python-docx==0.8.11
 reportlab==4.0.0
 playwright==1.52.0
-mysqlclient==2.2.4
