@@ -90,6 +90,21 @@ DATABASES = {
     }
 }
 
+if os.getenv("PYTHONANYWHERE_DOMAIN"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.getenv("MYSQL_DB_NAME", "username$dbname"),
+            "USER": os.getenv("MYSQL_USER", "username"),
+            "PASSWORD": os.getenv("MYSQL_PASSWORD", "yourpassword"),
+            "HOST": os.getenv("MYSQL_HOST", "username.mysql.pythonanywhere-services.com"),
+            "PORT": "3306",
+            "OPTIONS": {
+                "charset": "utf8mb4",
+            }
+        }
+    }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
