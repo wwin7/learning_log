@@ -457,14 +457,19 @@ def global_search(request):
 
   if keyword:
     topic_results = list(
-      Topic.objects.filter(owner=request.user, text__icontains=keyword)
+      Topic.objects.filter(owner=request.user).filter(Q(text__icontains=keyword) | Q(tags__icontains=keyword))
       .annotate(entry_total=Count("entries", filter=Q(entries__is_deleted=False)))
       .order_by("sort_order", "-updated_at")
     )
 
     entries = (
       _active_entries(request.user)
-      .filter(Q(text__icontains=keyword) | Q(tags__icontains=keyword) | Q(topic__text__icontains=keyword))
+      .filter(
+        Q(text__icontains=keyword)
+        | Q(tags__icontains=keyword)
+        | Q(topic__text__icontains=keyword)
+        | Q(topic__tags__icontains=keyword)
+      )
       .select_related("topic")
       .order_by("-is_pinned", "-pinned_at", "-date_added")[:50]
     )
